@@ -27,7 +27,6 @@ cd frontend && npm run dev
 
 - **Backend (local):** Use [.NET User Secrets](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets) — never `appsettings.json`
 - **Frontend (local):** Use `.env.local` (git-ignored) — never `.env` with real values
-- **Production:** Environment variables or Azure Key Vault
 - **If a secret is accidentally committed:** Rotate immediately — treat it as compromised
 
 ### CI/CD
@@ -35,15 +34,6 @@ cd frontend && npm run dev
 GitHub Actions CI via `.github/workflows/ci.yml`. Triggers on push to `main`, `develop`, `feature/*` and PRs targeting `main` or `develop`. Steps: restore → build → test. No deployment pipeline configured yet.
 
 **Dependabot** is enabled for automated dependency update PRs.
-
-### Deployment
-
-| Target | Platform |
-|---|---|
-| Backend | Azure Container Apps |
-| Database | Azure Database for PostgreSQL |
-| Frontend | Vercel |
-| Infrastructure as Code | Azure Bicep |
 
 ### OWASP Top 10 Mitigations
 

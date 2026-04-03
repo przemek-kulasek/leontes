@@ -23,8 +23,6 @@ Generate a commit message for the changes that are about to be committed.
    <type>(<scope>): <short summary>
 
    <optional body — what and why, not how>
-
-   Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
    ```
 
    ### Type
@@ -62,6 +60,7 @@ Generate a commit message for the changes that are about to be committed.
    - Explain *what* changed and *why* — the diff already shows *how*
    - Skip the body for trivial, self-explanatory changes
    - If the change addresses a GitHub issue, add `Closes #<number>` or `Refs #<number>`
+   - Do not add Co-authored-by trailers — those are handled externally by the agent configuration
 
 4. **Present the message.**
    - Show the complete commit message in a fenced code block.
@@ -72,4 +71,4 @@ Generate a commit message for the changes that are about to be committed.
 - Never fabricate changes — base the message strictly on the diff output.
 - Keep the summary line specific. "fix: resolve null reference in user lookup by email" is good. "fix: bug fix" is not.
 - When both backend and frontend change in the same diff, prefer two separate commit messages (one per layer) unless they are tightly coupled.
-- Always include the `Co-authored-by` trailer.
+- Do not include Co-authored-by trailers in the generated message.
