@@ -1,31 +1,35 @@
-# 10 — Feature Name
+# 10 — CLI Chat
 
 ## Problem
 
-What user problem does this feature solve?
+The user needs a direct way to chat with the assistant from a terminal without any external dependencies.
 
 ## Acceptance Criteria
 
-- [ ] User can do X
-- [ ] System responds with Y
-- [ ] Error case Z is handled
+- [ ] User can send a message and receive a streamed response
+- [ ] Conversation context is preserved within a session
+- [ ] Messages are persisted to the database for memory
 
 ## API Contract
 
 ```
-POST /api/v1/resource
-Request:  { "field": "string" }
-Response: { "id": "guid", "field": "string" }
+POST /api/v1/messages
+Request:  { "content": "string", "channel": "cli" }
+Response: SSE stream of assistant response chunks
+
+GET /api/v1/messages?limit=20
+Response: [ { "id": "guid", "role": "user|assistant", "content": "string", "createdAt": "datetime" } ]
 ```
 
 ## Data Model
 
-New or changed entities, fields, relationships.
+- `Message`: Id, Role, Content, Channel, ConversationId, CreatedAt
+- `Conversation`: Id, Title, CreatedAt, LastMessageAt
 
 ## Dependencies
 
-Which features (by number) must exist first? `None` if standalone.
+`None` — this is the foundation.
 
 ## Open Questions
 
-- Any unresolved decisions?
+- CLI client as a separate dotnet tool or integrated into the API project?

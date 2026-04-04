@@ -2,23 +2,24 @@
 
 ## Vision
 
-A brief, one-paragraph statement of what this product is and why it exists.
+A personal AI assistant that communicates through multiple channels (CLI, Signal, voice), processes messages asynchronously using LLMs, and builds long-term memory to provide increasingly personalized and context-aware responses.
 
 ## Target Users
 
-- **Primary:** Who uses this daily?
-- **Secondary:** Who benefits indirectly?
+- **Primary:** The project owner — a single user who wants a unified AI assistant across devices and channels.
 
 ## Core Problem
 
-What specific problem does this solve? Why do existing solutions fall short?
+Existing AI assistants are stateless per-session and locked to a single interface. There's no way to message your assistant from Signal, pick up the conversation from CLI, and have it remember context from last week — without paying for a hosted service that owns your data.
 
 ## Key Outcomes
 
-- What does success look like?
-- What metrics matter?
+- Seamless conversation across CLI and Signal
+- Persistent memory that improves responses over time
+- Full ownership of data and configuration
+- Voice interaction as an enhancement layer
 
 ## Scope Boundaries
 
-- **In scope:** What this project will do in v1.
-- **Out of scope:** What it explicitly will not do (yet).
+- **In scope (v1):** CLI chat, Signal integration, async message processing loop, LLM orchestration, vector memory, configuration management, user auth.
+- **Out of scope (v1):** Multi-user support, mobile app, proactive notifications, third-party integrations beyond Signal.

@@ -2,35 +2,41 @@
 
 ## System Overview
 
-High-level description of the system and its main components.
+The assistant receives messages from multiple input channels (CLI, Signal), queues them into an async processing loop, resolves context from long-term memory, calls an LLM, and delivers the response back through the originating channel.
 
 ## Components
 
 | Component | Tech | Responsibility |
 |-----------|------|----------------|
-| Backend API | .NET 10 Minimal API | REST endpoints, auth, business logic |
-| Frontend | Next.js + TypeScript | UI, routing, i18n |
-| Database | PostgreSQL 17 | Persistence |
-| AI Layer | Microsoft.Agents.AI | Agent orchestration, tool execution |
+| Backend API | .NET 10 Minimal API | REST endpoints, auth, configuration |
+| Processing Loop | Background service | Async message intake → LLM → response delivery |
+| Input: CLI | Terminal client | Direct user interaction |
+| Input: Signal | Signal Bot / Bridge | Receive and send Signal messages |
+| Memory | PostgreSQL + pgvector | Conversation history + semantic search |
+| Database | PostgreSQL 17 | Config, auth, message storage |
+| AI Layer | Microsoft.Agents.AI | LLM orchestration, tool execution |
+| Voice (future) | TBD (Whisper / TTS) | Speech-to-text and text-to-speech |
 
 ## Data Flow
 
 ```
-User → Frontend (Next.js) → REST API → Application Layer → Infrastructure (EF Core / AI / External)
-                                                          → PostgreSQL
+CLI / Signal → Message Queue → Processing Loop → Memory Lookup (pgvector)
+                                               → LLM Call
+                                               → Response → Original Channel
 ```
 
 ## Auth Model
 
-Brief description of auth strategy (JWT + refresh tokens, role-based access).
+Single-user with API key or JWT for CLI access. Signal authenticated via bot registration.
 
 ## Key Decisions
 
 | Decision | Rationale |
 |----------|-----------|
-| SSE over WebSockets | Simpler for unidirectional streaming |
-| No FluentValidation | Domain exceptions + service checks are sufficient |
-| Vertical slices | Features implemented end-to-end, not layer-by-layer |
+| pgvector over standalone vector DB | Already using PostgreSQL, one less service to manage |
+| Async processing loop | Decouples message intake from LLM latency |
+| Signal as first external channel | E2E encrypted, personal use, good bot support |
+| SSE for streaming responses | Simple unidirectional streaming for CLI/web |
 
 ## Infrastructure
 
