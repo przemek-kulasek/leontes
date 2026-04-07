@@ -1,51 +1,73 @@
 # Leontes
 
+**An AI agent that lives in your OS, acts before you ask, and writes its own tools.**
+
+Leontes is a self-hosted, proactive AI agent for Windows. It monitors your system events, understands application UI structurally, remembers context across conversations through a knowledge graph, and — when it encounters something it can't do — writes a new tool, tests it, and asks you to approve it.
+
+Talk to it from your terminal. Message it from your phone via Signal. Or don't talk to it at all — it'll notice when you need help.
+
+## What makes this different
+
+| Feature | What it does |
+|---------|-------------|
+| **Sentinel** | Watches file downloads, clipboard, calendar, and active windows. Triggers suggestions without you asking. |
+| **Structural Vision** | Reads application UI via Windows UI Automation — no screenshots, no pixel matching. Sees buttons and text as code. |
+| **Synapse Graph** | Knowledge graph linking people, files, and projects. "Send this to the lead dev" just works. |
+| **Tool Forge** | The agent writes, compiles, tests, and registers new tools at runtime. You approve before anything runs. |
+| **CLI + Signal** | Talk to it from your PC or message it from your phone. Same context, same memory. |
+
+## Quick start
+
+```bash
+leontes init        # Interactive setup: database, AI provider, Signal, Sentinel config
+docker compose up   # Start PostgreSQL + backend
+leontes             # Start talking
+```
+
+## Architecture
+
+Two layers sharing one AI engine and one knowledge graph:
+
+```
+Sentinel (FS / Clipboard / Calendar / Window)
+  --> Pattern Match --> AI Layer --> CLI or Signal notification
+
+Structural Vision (Windows UI Automation)
+  --> Element Tree --> AI reads and interacts via accessibility API
+
+CLI / Signal --> Processing Loop --> Synapse Graph --> LLM + Tools --> Response
+```
+
+**Stack:** .NET 10 Minimal API, PostgreSQL 17 + pgvector, Microsoft.Agents.AI, Windows UI Automation.
+
 ## Development
 
-### Local Setup
+### Prerequisites
 
-**Docker Compose** runs the full stack locally:
+- .NET 10 SDK
+- Docker & Docker Compose
+- Node.js (if working on future frontend)
+
+### Running locally
+
 ```bash
-docker compose up
+docker compose up                                  # Full stack (PostgreSQL + backend)
+dotnet build backend/ && dotnet test backend/      # Build and test
+dotnet run --project backend/src/Leontes.Api       # Run backend directly
 ```
 
-Services: postgres (port 5432) → backend (port 5186) → frontend (port 3000). Health checks gate the startup chain.
+### Secrets
 
-**Without Docker:**
-```bash
-# Backend
-dotnet build backend/
-dotnet test backend/
-dotnet run --project backend/src/<Project>.Api
+Use [.NET User Secrets](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets) for local development. Never put secrets in committed files.
 
-# Frontend
-cd frontend && npm install
-cd frontend && npm run dev
-```
+### CI
 
-### Secrets Management
+GitHub Actions: restore, build, test on push to `main`, `develop`, `feature/*`. Must pass before merge.
 
-- **Backend (local):** Use [.NET User Secrets](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets) — never `appsettings.json`
-- **Frontend (local):** Use `.env.local` (git-ignored) — never `.env` with real values
-- **If a secret is accidentally committed:** Rotate immediately — treat it as compromised
+## Status
 
-### CI/CD
+Early development. MVP scope: Sentinel, Structural Vision, Synapse Graph, Tool Forge, CLI + Signal.
 
-GitHub Actions CI via `.github/workflows/ci.yml`. Triggers on push to `main`, `develop`, `feature/*` and PRs targeting `main` or `develop`. Steps: restore → build → test. No deployment pipeline configured yet.
+## License
 
-**Dependabot** is enabled for automated dependency update PRs.
-
-### OWASP Top 10 Mitigations
-
-| Risk | How we mitigate |
-|---|---|
-| A01 Broken Access Control | Role-based auth, user-scoped data queries |
-| A02 Cryptographic Failures | HTTPS everywhere, no secrets in code, ASP.NET Identity hashing |
-| A03 Injection | EF Core parameterized queries, no raw SQL concatenation, no `eval()` |
-| A04 Insecure Design | Clean architecture separation, least privilege |
-| A05 Security Misconfiguration | No default credentials, no stack traces in production, security headers |
-| A06 Vulnerable Components | Dependabot enabled, approved package allowlist |
-| A07 Auth Failures | Short-lived JWTs, refresh token rotation, account lockout |
-| A08 Data Integrity Failures | Server-side validation, no untrusted deserialization |
-| A09 Logging Failures | Structured logging with correlation IDs, never log secrets |
-| A10 SSRF | Allowlist for backend-fetched URLs |
+AGPL-3.0 — free for personal use. Commercial use requires a [commercial license](mailto:TODO).
