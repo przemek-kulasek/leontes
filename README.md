@@ -1,7 +1,7 @@
 # Leontes
 
 <p align="center">
-  <img src="logo/logo.png" alt="Leontes" width="320" />
+  <img src="docs/logo.png" alt="Leontes" width="320" />
 </p>
 
 **An AI agent that lives in your OS, acts before you ask, and writes its own tools.**
