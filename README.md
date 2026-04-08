@@ -1,5 +1,9 @@
 # Leontes
 
+<p align="center">
+  <img src="logo/logo.png" alt="Leontes" width="320" />
+</p>
+
 **An AI agent that lives in your OS, acts before you ask, and writes its own tools.**
 
 Leontes is a self-hosted, proactive AI agent for Windows. It monitors your system events, understands application UI structurally, remembers context across conversations through a knowledge graph, and — when it encounters something it can't do — writes a new tool, tests it, and asks you to approve it.
