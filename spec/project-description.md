@@ -6,7 +6,7 @@ Leontes is a **Proactive OS Partner**. It integrates into Windows as an ambient 
 
 ## Core Problem
 
-AI assistants are reactive, stateless, and locked to one interface. Workflows generate constant signals (downloads, calendar, clipboard, active windows) that an agent could act on — but no self-hosted solution connects these while remaining reachable from your phone and learning over time.
+Modern AI agents have memory, support multiple interfaces, and can be self-hosted — but they are still **reactive**. They wait for you to ask. They also can't extend themselves: when they hit a capability gap, they stop or do it poorly. Leontes closes both gaps — an agent that **acts before you ask** and **writes its own tools autonomously** — while being fully transparent and open-source.
 
 ## Core Modules
 
@@ -46,6 +46,6 @@ Source code is fully public. AGPL enforces this split: commercial users who don'
 
 ## Scope Boundaries
 
-- **MVP:** Sentinel (all 4 inputs), Structural Vision, Synapse Graph, CLI + Signal, Tool Forge (user-triggered), Setup Wizard.
-- **Post-MVP:** Ghost Overlay, voice, web dashboard, Vault, autonomous tool creation (agent-initiated).
+- **MVP:** Sentinel (all 4 inputs: file system, clipboard, calendar, active window), Structural Vision, Synapse Graph, CLI + Signal, Tool Forge (autonomous — agent-initiated with user approval), Setup Wizard.
+- **Post-MVP:** Ghost Overlay, voice, web dashboard, Vault (sandboxed execution).
 - **Out of scope:** Multi-user, macOS/Linux Structural Vision.

@@ -15,16 +15,16 @@ Never use a NuGet or NPM package not on the approved list in `.claude/rules/pack
 Ask only when the answer is not covered by this spec — new feature scope, architectural decisions, or ambiguous business logic. Do not ask about naming, formatting, or anything already defined here.
 
 ### Test Coverage
-Every new backend (C#) logic branch must have a corresponding xUnit v3 test. Frontend component tests are encouraged but not required — the project has no frontend test runner configured yet.
+Every new backend (C#) logic branch must have a corresponding xUnit v3 test.
 
 ### Type Safety
-No `any` in TypeScript. No `dynamic` in C#.
+No `dynamic` in C#.
 
 ### Formatting
 Match the existing indentation, naming, and code style of the file you are editing. Do not reformat unrelated code.
 
 ### Secrets
-Never put secrets in `appsettings.json`, `.env`, or any committed file. Use .NET User Secrets for backend, `.env.local` for frontend. Environment variables for production.
+Never put secrets in `appsettings.json` or any committed file. Use .NET User Secrets for local development. Environment variables for production.
 
 ### Git
 Never push directly to `main` or `develop`. Always use a feature branch (`feature/<name>`).
@@ -45,93 +45,105 @@ Keep `README.md` up to date when adding or removing features, dependencies, or s
 ### Directory Layout
 
 ```
-/backend/src/<Project>.Api             — .NET 10 Minimal API host
-/backend/src/<Project>.Application     — Service interfaces, DTOs, feature contracts
-/backend/src/<Project>.Domain          — Core entities, value objects, domain exceptions (zero dependencies)
-/backend/src/<Project>.Infrastructure  — EF Core DbContext, external API clients, repositories
-/backend/tests                         — xUnit v3 tests mirroring /src structure
-/frontend/src/app/[locale]             — Next.js App Router with dynamic locale segment
-/frontend/src/components               — Small, composable UI components grouped by feature
-/frontend/src/lib                      — API client, providers, React Query hooks
-/frontend/src/types                    — Shared TypeScript type definitions
-/frontend/src/i18n                     — next-intl routing, request config, navigation helpers
+/backend/src/Leontes.Api             — .NET 10 Minimal API host
+/backend/src/Leontes.Application     — Service interfaces, DTOs, feature contracts
+/backend/src/Leontes.Domain          — Core entities, value objects, domain exceptions (zero dependencies)
+/backend/src/Leontes.Infrastructure  — EF Core DbContext, external API clients, repositories
+/backend/tests                       — xUnit v3 tests mirroring /src structure
+/spec                                — Project and feature specifications
 ```
 
 ### Clean Architecture Layers
 
 Dependency flows inward only:
 
-1. **Domain** (innermost) — Base Entity class (Guid Id, DateTime Created, Guid CreatedBy, DateTime? LastModified, Guid? LastModifiedBy). All IDs are Guids. Audit fields auto-populated via SaveChangesInterceptor — never set them manually. Domain exceptions: DomainException, ValidationException, NotFoundException. User entity extends `IdentityUser<Guid>`, not base Entity.
+1. **Domain** (innermost) — Base Entity class (Guid Id, DateTime Created, Guid CreatedBy, DateTime? LastModified, Guid? LastModifiedBy). All IDs are Guids. Audit fields auto-populated via SaveChangesInterceptor — never set them manually. Domain exceptions: DomainException, ValidationException, NotFoundException.
 2. **Application** — Service interfaces, DTOs (records), IApplicationDbContext. References Domain only.
-3. **Infrastructure** — EF Core DbContext, external API clients, HttpClientFactory with resilience, ASP.NET Identity. References Application + Domain.
-4. **API** (outermost) — Minimal API endpoints in Endpoints/ folder, global exception handler, extensions for CORS/rate limiting/health checks/logging. DI wiring via AddApplication() / AddInfrastructure().
+3. **Infrastructure** — EF Core DbContext, external API clients, HttpClientFactory with resilience. References Application + Domain.
+4. **API** (outermost) — Minimal API endpoints in Endpoints/ folder, global exception handler, extensions for health checks/logging. DI wiring via AddApplication() / AddInfrastructure().
 
 ### Communication
 
-- Data Flow: Frontend (Next.js) → REST API (Minimal APIs) → Application Layer → Infrastructure (EF Core / External APIs)
-- SSE for server-to-client streaming (AI responses, progress). SignalR only if bidirectional needed.
-- SSE: backend streams via IAsyncEnumerable or Response.WriteAsync with `text/event-stream`. Named event types with JSON payload (`event: <type>\ndata: <json>\n\n`). Terminal event (done/error) required. Define event types per feature (e.g., `session`, `tool_start`, `tool_complete`, `content_delta`, `done`, `error`). Frontend consumes via EventSource or custom fetch-based reader. Typed discriminated union for all event types in frontend TypeScript.
-- Stream interruption: track IsComplete flag on assistant messages. User messages are always complete; assistant messages only after full stream received and persisted. On interruption with no content: delete the empty message and metadata. On interruption with partial content: preserve with `IsComplete = false`. Exclude incomplete assistant messages from future AI context. Frontend must detect stream termination without done/error event and update UI accordingly.
+- Two channels: CLI (terminal) and Signal (E2E encrypted mobile), both feeding into one async processing loop
+- Data flow: CLI/Signal → Queue → Processing Loop → Synapse Graph → LLM + Tools → Response → Original Channel
+- Sentinel triggers: OS Events → Pattern Match → AI Layer (if needed) → CLI/Signal notification
+- SSE for streaming responses from backend to CLI client
+- SSE: backend streams via IAsyncEnumerable or Response.WriteAsync with `text/event-stream`. Named event types with JSON payload (`event: <type>\ndata: <json>\n\n`). Terminal event (done/error) required.
+- Stream interruption: track IsComplete flag on assistant messages. On interruption with no content: delete the empty message and metadata. On interruption with partial content: preserve with `IsComplete = false`. Exclude incomplete assistant messages from future AI context.
 
 ### Validation
 
-No FluentValidation. Use domain exceptions, service-level checks, ASP.NET Identity, and frontend light helpers.
+No FluentValidation. Use domain exceptions and service-level checks.
 
 ### Error Handling
 
-Global ExceptionHandler (ExceptionHandler.cs implementing IExceptionHandler) returns RFC 9457 ProblemDetails. Mapping: ValidationException → 400, NotFoundException → 404, unhandled → 500. Frontend: ApiError and UnauthorizedError classes. Custom parsing for ASP.NET Identity validation errors mapped to i18n strings.
+Global ExceptionHandler (ExceptionHandler.cs implementing IExceptionHandler) returns RFC 9457 ProblemDetails. Mapping: ValidationException → 400, NotFoundException → 404, unhandled → 500.
 
 ### Database
 
-- PostgreSQL 17 via EF Core 10 (DbContext extending IdentityDbContext), Fluent API configs in Configurations/ folder, enums as strings
-- Initialization: runs migrations automatically on startup + seeds default roles and users
-- Migrations: `dotnet ef migrations add <DescriptiveName> --project backend/src/<Project>.Infrastructure --startup-project backend/src/<Project>.Api`
+- PostgreSQL 17 via EF Core 10, Fluent API configs in Configurations/ folder, enums as strings
+- Initialization: runs migrations automatically on startup + seeds default data
+- Migrations: `dotnet ef migrations add <DescriptiveName> --project backend/src/Leontes.Infrastructure --startup-project backend/src/Leontes.Api`
 - Migration names use PascalCase and describe the change. Never edit applied migrations. Data migrations go in the initializer or a separate migration, not mixed into schema migrations.
 - Query rules: .AsNoTracking() for reads, no lazy loading, explicit .Include(), paginate unbounded lists (PagedRequest/PagedResponse), avoid N+1
 
+### Synapse Graph (Knowledge Graph)
+
+- PostgreSQL 17 + pgvector for entities, relationships, and semantic search
+- Entity types: People, Files, Projects — linked by relationships
+- Contextual resolution: "send this to the lead dev" → person lookup from Git/email history
+- Vector embeddings stored alongside entities for semantic search
+- Tool usage tracked in graph; unused tools pruned automatically
+
 ### Auth
 
-- ASP.NET Identity + JWT + refresh token flow (expiry details in Security section)
-- MapIdentityApi() for standard endpoints (framework-provided, not versioned). Custom auth endpoints versioned under /api/v1/.
-- Role-based: specific roles guard admin endpoints. RequireAuthorization() on protected endpoints.
-- IUser in Application, CurrentUser in API (uses IHttpContextAccessor, scoped)
-
-### Email
-
-- ResendEmailSender (prod) / ConsoleEmailSender (dev, no API key needed), switched via config (Email:Provider)
-- Email used for account confirmation (required before login) and password reset
-- Localized templates, simple HTML
-
-### Frontend
-
-- Next.js with App Router, TypeScript strict mode
-- Styling: TailwindCSS + Framer Motion animations + Lucide React icons
-- State: TanStack React Query (server state) + React Context (auth) + local useState
-- i18n: next-intl with [locale] dynamic segment
-- Components: Small (<100 lines), feature-grouped. Named exports for components, default exports for pages/layouts.
+- Single-user, local deployment
+- API key or JWT for CLI communication with backend
+- Signal: bot registration during `leontes init`
+- JWT secret auto-generated by setup wizard, stored in .NET User Secrets
 
 ### AI / Agents
 
 - Microsoft.Agents.AI, tools as classes in Infrastructure/
 - Tools must be deterministic and side-effect-free where possible. Tool metadata (name, description) must be clear and human-readable.
 - Single agent by default, split only when domains are clearly separate
-- Token tracking decorator, usage limits enforced at endpoint level. Expose a usage endpoint for the frontend.
 - Provider configurable (AiProvider:Provider), Ollama for dev, cloud for prod
+
+### Sentinel (Proactive Engine)
+
+- Background service monitoring OS events: file system watcher, clipboard, calendar, active window
+- Pattern rules trigger suggestions or autonomous actions
+- Delivered via CLI or Signal notification
+
+### Structural Vision
+
+- Windows UI Automation to read application UI as structured element tree
+- Accessibility APIs for interaction — no screenshots, no simulated clicks
+
+### Tool Forge (Self-Extending Agent)
+
+- Agent writes tool classes when capability gap detected or repeated pattern observed
+- Flow: generate tool class → compile via Roslyn → run test → user approval → register in catalog
+- Usage tracked in Synapse Graph; unused tools pruned automatically
+- No unreviewed code runs — user must approve before registration
+
+### Setup Wizard
+
+- Interactive CLI (`leontes init`) for first-run configuration
+- Steps: PostgreSQL via Docker Compose → AI provider + API key → Signal bot registration → Sentinel defaults → auth secret generation
+- All secrets stored in .NET User Secrets
 
 ### Local Dev
 
-Each service has two Dockerfiles: `Dockerfile.dev` (hot reload via `dotnet watch`/Next.js dev server) and `Dockerfile` (production multi-stage build with minimal runtime image).
+Docker Compose runs PostgreSQL + backend with hot-reload via `dotnet watch`.
 
 ```bash
-docker compose up                                    # Full stack (uses dev Dockerfiles)
+docker compose up                                    # PostgreSQL + backend
 dotnet build backend/ && dotnet test backend/        # Backend
-dotnet run --project backend/src/<Project>.Api       # Run backend directly
-cd frontend && npm install && npm run dev            # Frontend
+dotnet run --project backend/src/Leontes.Api         # Run backend directly
 ```
 
 Health checks: backend exposes `/_health` endpoint.
-
-Frontend dev proxy: Use next.config.ts rewrites to route API calls to the backend container.
 
 Resilience: AddStandardResilienceHandler() on all external HTTP clients.
 
@@ -150,33 +162,15 @@ Resilience: AddStandardResilienceHandler() on all external HTTP clients.
 
 ## Security
 
-### CORS
-Frontend origin only, no wildcards, credentials allowed. Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS. Headers: Content-Type, Authorization, X-Correlation-Id. Origins from config, not hardcoded.
-
-### Rate Limiting
-ASP.NET Core built-in with named policies in `AddRateLimiting()`. Apply via `.RequireRateLimiting("policyName")`. Global: 100/min/IP. Auth endpoints: 10/min/IP. Return 429 with Retry-After. These are starting points — adjust as needed.
-
-### CSP
-```
-default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';
-img-src 'self' data: https:; font-src 'self'; connect-src 'self' <api-origin>;
-frame-ancestors 'none'; base-uri 'self'; form-action 'self';
-```
-
-### Security Headers
-Configure in both layers: backend via `UseSecurityHeaders()` middleware, frontend via `next.config.ts` `headers()` function.
-
-X-Content-Type-Options: nosniff | X-Frame-Options: DENY | Referrer-Policy: strict-origin-when-cross-origin | Permissions-Policy: camera=(), microphone=(), geolocation=() | HSTS: max-age=31536000; includeSubDomains (prod only)
-
 ### Input Validation
-Server-side always. Parameterized queries (EF Core) — never concatenate user input into SQL. Sanitize HTML with allowlist. Validate file uploads: check MIME type, enforce size limits, never store in web-accessible directory with original filename.
+Server-side always. Parameterized queries (EF Core) — never concatenate user input into SQL.
 
 ### Auth Security
-ASP.NET Identity for passwords. JWT 15-30 min, refresh 7 days (single-use, rotated). Lockout after 5 failed attempts for 15 min.
+JWT for CLI ↔ backend communication. Secret auto-generated, stored in .NET User Secrets.
 
 ### Secrets Management
 - Never commit secrets — `.gitignore` must exclude `appsettings.*.json`, `.env`, `.env.local`
 
 ---
 
-Language-specific conventions (C#, TypeScript, logging, REST API, testing, copywriting, approved packages) are in `.claude/rules/` and load automatically when editing relevant file types.
+Language-specific conventions (C#, logging, REST API, testing, approved packages) are in `.claude/rules/` and load automatically when editing relevant file types.

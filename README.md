@@ -66,7 +66,7 @@ GitHub Actions: restore, build, test on push to `main`, `develop`, `feature/*`. 
 
 ## Status
 
-Early development. MVP scope: Sentinel, Structural Vision, Synapse Graph, Tool Forge, CLI + Signal.
+Early development. MVP scope: Sentinel (file system, clipboard, calendar, active window), Structural Vision, Synapse Graph, Tool Forge (autonomous with user approval), CLI + Signal.
 
 ## License
 

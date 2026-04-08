@@ -11,7 +11,6 @@ applyTo: "**/*.cs,**/*.ts,**/*.tsx,**/*.csproj,**/package.json,**/Directory.Pack
 | Layer | Language / Runtime |
 |---|---|
 | Backend | C# 14 on .NET 10 |
-| Frontend | TypeScript 5 (strict mode) |
 | Database | PostgreSQL 17 |
 
 ### Primary Frameworks
@@ -19,26 +18,17 @@ applyTo: "**/*.cs,**/*.ts,**/*.tsx,**/*.csproj,**/package.json,**/Directory.Pack
 | Area | Framework |
 |---|---|
 | Backend API | ASP.NET Core Minimal APIs (.NET 10) |
-| Frontend | Next.js (App Router) + React 19 |
-| Styling | Tailwind CSS v4 with `@tailwindcss/postcss` |
-| i18n | next-intl |
 
 ### Approved NuGet Packages
 
 **AI & LLM:** Microsoft.Agents.AI, Microsoft.Extensions.AI, Microsoft.Extensions.AI.OpenAI, OllamaSharp
 
-**Data & Persistence:** Microsoft.EntityFrameworkCore, Microsoft.EntityFrameworkCore.Design, Npgsql.EntityFrameworkCore.PostgreSQL, Microsoft.AspNetCore.Identity.EntityFrameworkCore
+**Data & Persistence:** Microsoft.EntityFrameworkCore, Microsoft.EntityFrameworkCore.Design, Npgsql.EntityFrameworkCore.PostgreSQL, Pgvector.EntityFrameworkCore
 
 **Infrastructure & Resilience:** AspNetCore.HealthChecks.NpgSql, AspNetCore.HealthChecks.UI.Client, Microsoft.Extensions.Http.Resilience, Microsoft.Extensions.DependencyInjection.Abstractions, Serilog.AspNetCore, Serilog.Enrichers.ClientInfo, Serilog.Sinks.Console
 
-**API & External Services:** Microsoft.AspNetCore.OpenApi, Scalar.AspNetCore, Resend, Stripe.net, HtmlAgilityPack
+**API & Tooling:** Microsoft.AspNetCore.OpenApi, Scalar.AspNetCore
+
+**Code Generation:** Microsoft.CodeAnalysis.CSharp
 
 **Testing:** xunit.v3, xunit.runner.visualstudio, Testcontainers.PostgreSql, Microsoft.AspNetCore.Mvc.Testing, Microsoft.NET.Test.Sdk, coverlet.collector
-
-### Approved NPM Packages
-
-**Core & State:** next, react, react-dom, typescript, @tanstack/react-query, next-intl
-
-**UI & Styling:** tailwindcss, @tailwindcss/postcss, framer-motion, lucide-react
-
-**Development & Tooling:** eslint, eslint-config-next, @types/node, @types/react, @types/react-dom
