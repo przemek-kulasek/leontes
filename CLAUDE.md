@@ -45,7 +45,9 @@ Keep `README.md` up to date when adding or removing features, dependencies, or s
 ### Directory Layout
 
 ```
-/backend/src/Leontes.Api             — .NET 10 Minimal API host
+/backend/src/Leontes.Api             — .NET 10 Minimal API host + Processing Loop (IHostedService)
+/backend/src/Leontes.Worker          — .NET 10 Windows Service (Sentinel + Signal bridge)
+/backend/src/Leontes.Cli             — .NET 10 console app / dotnet tool (installed as `leontes`)
 /backend/src/Leontes.Application     — Service interfaces, DTOs, feature contracts
 /backend/src/Leontes.Domain          — Core entities, value objects, domain exceptions (zero dependencies)
 /backend/src/Leontes.Infrastructure  — EF Core DbContext, external API clients, repositories
@@ -53,18 +55,29 @@ Keep `README.md` up to date when adding or removing features, dependencies, or s
 /spec                                — Project and feature specifications
 ```
 
+### Host Architecture
+
+Three executable projects, two always-running hosts + one CLI tool:
+
+1. **Leontes.Api** — HTTP endpoints + Processing Loop (`IHostedService`). The brain. Handles chat requests from CLI (via HTTP) and from Signal (forwarded by Worker). Runs the LLM, tools, Synapse Graph queries. Includes rate limiting, CORS, auto-migration on startup.
+2. **Leontes.Worker** — Windows Service (`UseWindowsService()`) running Sentinel + Signal bridge. Always on. Forwards Signal messages to the API. Sends notifications when Sentinel triggers.
+3. **Leontes.Cli** — dotnet tool installed globally as `leontes`. Commands: `leontes init` (setup wizard), `leontes chat` (interactive chat), `leontes` (default: chat). Communicates with the API via HTTP.
+
 ### Clean Architecture Layers
 
-Dependency flows inward only:
+Dependency flows inward only. Api, Worker, and Cli are outer-layer hosts — they all share the same inner layers:
 
 1. **Domain** (innermost) — Base Entity class (Guid Id, DateTime Created, Guid CreatedBy, DateTime? LastModified, Guid? LastModifiedBy). All IDs are Guids. Audit fields auto-populated via SaveChangesInterceptor — never set them manually. Domain exceptions: DomainException, ValidationException, NotFoundException.
-2. **Application** — Service interfaces, DTOs (records), IApplicationDbContext. References Domain only.
-3. **Infrastructure** — EF Core DbContext, external API clients, HttpClientFactory with resilience. References Application + Domain.
-4. **API** (outermost) — Minimal API endpoints in Endpoints/ folder, global exception handler, extensions for health checks/logging. DI wiring via AddApplication() / AddInfrastructure().
+2. **Application** — Service interfaces, DTOs (records), IApplicationDbContext, PagedRequest/PagedResponse. References Domain only.
+3. **Infrastructure** — EF Core DbContext, ApplicationDbContextInitializer (auto-migration + seeding), external API clients, HttpClientFactory with resilience. References Application + Domain.
+4. **Api** (outermost) — Minimal API endpoints in Endpoints/ folder, global exception handler, extensions for health checks/logging/CORS/rate limiting. DI wiring via AddApplication() / AddInfrastructure(). Auto-migrates database on startup.
+5. **Worker** (outermost) — Windows Service hosting Sentinel background services and Signal bridge. DI wiring via AddApplication() / AddInfrastructure().
+6. **Cli** (outermost) — Standalone console app, no project references to backend layers. Communicates with Api via HTTP only.
 
 ### Communication
 
-- Two channels: CLI (terminal) and Signal (E2E encrypted mobile), both feeding into one async processing loop
+- Two channels: CLI (terminal) and Signal (E2E encrypted mobile), both feeding into one async processing loop hosted in the Api
+- CLI communicates with Api via HTTP; Signal messages are received by Worker and forwarded to Api
 - Data flow: CLI/Signal → Queue → Processing Loop → Synapse Graph → LLM + Tools → Response → Original Channel
 - Sentinel triggers: OS Events → Pattern Match → AI Layer (if needed) → CLI/Signal notification
 - SSE for streaming responses from backend to CLI client
@@ -111,7 +124,9 @@ Global ExceptionHandler (ExceptionHandler.cs implementing IExceptionHandler) ret
 
 ### Sentinel (Proactive Engine)
 
-- Background service monitoring OS events: file system watcher, clipboard, calendar, active window
+- Background service hosted in Leontes.Worker as an `IHostedService`
+- Monitors OS events: file system watcher, clipboard, calendar, active window
+- Defines interfaces for each input source: IFileSystemWatcher, IClipboardMonitor, ICalendarMonitor, IActiveWindowMonitor
 - Pattern rules trigger suggestions or autonomous actions
 - Delivered via CLI or Signal notification
 
@@ -129,23 +144,27 @@ Global ExceptionHandler (ExceptionHandler.cs implementing IExceptionHandler) ret
 
 ### Setup Wizard
 
-- Interactive CLI (`leontes init`) for first-run configuration
+- Implemented as `leontes init` command in Leontes.Cli
 - Steps: PostgreSQL via Docker Compose → AI provider + API key → Signal bot registration → Sentinel defaults → auth secret generation
 - All secrets stored in .NET User Secrets
 
 ### Local Dev
 
-Docker Compose runs PostgreSQL + backend with hot-reload via `dotnet watch`.
+Docker Compose runs PostgreSQL + backend with hot-reload via `dotnet watch`. Worker runs natively on Windows (needs OS APIs for Sentinel).
 
 ```bash
-docker compose up                                    # PostgreSQL + backend
-dotnet build backend/ && dotnet test backend/        # Backend
-dotnet run --project backend/src/Leontes.Api         # Run backend directly
+docker compose up                                    # PostgreSQL + backend (Api)
+dotnet build backend/ && dotnet test backend/        # Build and test all projects
+dotnet run --project backend/src/Leontes.Api         # Run Api directly
+dotnet run --project backend/src/Leontes.Worker      # Run Worker directly (Windows only)
+dotnet run --project backend/src/Leontes.Cli         # Run CLI directly
 ```
 
 Health checks: backend exposes `/_health` endpoint.
 
 Resilience: AddStandardResilienceHandler() on all external HTTP clients.
+
+Rate limiting: Fixed-window rate limiter (100 requests/minute per client IP) via ASP.NET Core built-in middleware.
 
 ---
 

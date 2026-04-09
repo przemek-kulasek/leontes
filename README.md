@@ -32,16 +32,22 @@ leontes             # Start talking
 
 ## Architecture
 
-Two layers sharing one AI engine and one knowledge graph:
+Three executable projects sharing one AI engine and one knowledge graph:
+
+| Component | Project | Responsibility |
+|-----------|---------|----------------|
+| **Backend API** | `Leontes.Api` | HTTP endpoints, Processing Loop, SSE streaming, auto-migration, rate limiting |
+| **Worker** | `Leontes.Worker` | Windows Service: Sentinel (OS monitoring) + Signal bridge |
+| **CLI** | `Leontes.Cli` | dotnet tool (`leontes`): chat, setup wizard, user commands |
 
 ```
-Sentinel (FS / Clipboard / Calendar / Window)
+Sentinel (FS / Clipboard / Calendar / Window)  [Worker]
   --> Pattern Match --> AI Layer --> CLI or Signal notification
 
 Structural Vision (Windows UI Automation)
   --> Element Tree --> AI reads and interacts via accessibility API
 
-CLI / Signal --> Processing Loop --> Synapse Graph --> LLM + Tools --> Response
+CLI / Signal --> Processing Loop --> Synapse Graph --> LLM + Tools --> Response  [Api]
 ```
 
 **Stack:** .NET 10 Minimal API, PostgreSQL 17 + pgvector, Microsoft.Agents.AI, Windows UI Automation.
@@ -57,10 +63,14 @@ CLI / Signal --> Processing Loop --> Synapse Graph --> LLM + Tools --> Response
 ### Running locally
 
 ```bash
-docker compose up                                  # Full stack (PostgreSQL + backend)
-dotnet build backend/ && dotnet test backend/      # Build and test
-dotnet run --project backend/src/Leontes.Api       # Run backend directly
+docker compose up                                  # Full stack (PostgreSQL + backend API)
+dotnet build backend/ && dotnet test backend/      # Build and test all projects
+dotnet run --project backend/src/Leontes.Api       # Run API directly
+dotnet run --project backend/src/Leontes.Worker    # Run Worker directly (Windows only)
+dotnet run --project backend/src/Leontes.Cli       # Run CLI directly
 ```
+
+The Worker runs natively on Windows (needs OS APIs for Sentinel). It does not run in Docker.
 
 ### Secrets
 

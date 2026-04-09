@@ -25,7 +25,7 @@ applyTo: "**/*.cs,**/*.ts,**/*.tsx,**/*.csproj,**/package.json,**/Directory.Pack
 
 **Data & Persistence:** Microsoft.EntityFrameworkCore, Microsoft.EntityFrameworkCore.Design, Npgsql.EntityFrameworkCore.PostgreSQL, Pgvector.EntityFrameworkCore
 
-**Infrastructure & Resilience:** AspNetCore.HealthChecks.NpgSql, AspNetCore.HealthChecks.UI.Client, Microsoft.Extensions.Http.Resilience, Microsoft.Extensions.DependencyInjection.Abstractions, Serilog.AspNetCore, Serilog.Enrichers.ClientInfo, Serilog.Sinks.Console
+**Infrastructure & Resilience:** AspNetCore.HealthChecks.NpgSql, AspNetCore.HealthChecks.UI.Client, Microsoft.Extensions.Http.Resilience, Microsoft.Extensions.Hosting.WindowsServices, Microsoft.Extensions.DependencyInjection.Abstractions, Serilog.AspNetCore, Serilog.Enrichers.ClientInfo, Serilog.Sinks.Console
 
 **API & Tooling:** Microsoft.AspNetCore.OpenApi, Scalar.AspNetCore
 
