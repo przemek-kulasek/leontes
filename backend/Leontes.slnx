@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Leontes.Api/Leontes.Api.csproj" />
+    <Project Path="src/Leontes.Application/Leontes.Application.csproj" />
+    <Project Path="src/Leontes.Cli/Leontes.Cli.csproj" />
+    <Project Path="src/Leontes.Domain/Leontes.Domain.csproj" />
+    <Project Path="src/Leontes.Infrastructure/Leontes.Infrastructure.csproj" />
+    <Project Path="src/Leontes.Worker/Leontes.Worker.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Leontes.Application.Tests/Leontes.Application.Tests.csproj" />
+    <Project Path="tests/Leontes.Domain.Tests/Leontes.Domain.Tests.csproj" />
+    <Project Path="tests/Leontes.Infrastructure.Tests/Leontes.Infrastructure.Tests.csproj" />
+    <Project Path="tests/Leontes.Integration.Tests/Leontes.Integration.Tests.csproj" />
+  </Folder>
+</Solution>
