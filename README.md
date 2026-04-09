@@ -6,6 +6,8 @@
 
 **An AI agent that lives in your OS, acts before you ask, and writes its own tools.**
 
+[leontes.dev](https://leontes.dev)
+
 Leontes is a self-hosted, proactive AI agent for Windows. It monitors your system events, understands application UI structurally, remembers context across conversations through a knowledge graph, and — when it encounters something it can't do — writes a new tool, tests it, and asks you to approve it.
 
 Talk to it from your terminal. Message it from your phone via Signal. Or don't talk to it at all — it'll notice when you need help.
@@ -74,4 +76,4 @@ Early development. MVP scope: Sentinel (file system, clipboard, calendar, active
 
 ## License
 
-AGPL-3.0 — free for personal use. Commercial use requires a [commercial license](mailto:TODO).
+AGPL-3.0 — free for personal use. Commercial use requires a [commercial license](mailto:leontes.dev@pm.me).
