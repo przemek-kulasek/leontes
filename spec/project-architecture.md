@@ -2,38 +2,41 @@
 
 ## System Overview
 
-Two layers running on the user's PC, sharing one AI engine and one knowledge graph:
+Three executable projects running on the user's PC, sharing one AI engine and one knowledge graph:
 
-1. **Proactive Layer** — Sentinel monitors OS events, Structural Vision reads application UI. Triggers suggestions or actions through the AI layer.
-2. **Conversational Layer** — CLI and Signal feed into an async processing loop that resolves context from the knowledge graph and calls the LLM.
+1. **Leontes.Api** — HTTP endpoints + Processing Loop (`IHostedService`). The brain. Handles chat requests, runs the LLM, manages the Synapse Graph. Includes rate limiting, CORS, auto-migration on startup.
+2. **Leontes.Worker** — Windows Service running the Proactive Layer. Sentinel monitors OS events, Signal bridge receives mobile messages and forwards them to the API.
+3. **Leontes.Cli** — dotnet tool (`leontes`). The user interface. Setup wizard (`leontes init`), interactive chat, and future commands.
 
 ## Components
 
-| Component | Tech | Responsibility |
-|-----------|------|----------------|
-| Backend API | .NET 10 Minimal API | Endpoints, auth, SSE streaming |
-| Processing Loop | Background service | Message intake → context → LLM → response |
-| Sentinel | Background service | FS watcher, clipboard, calendar, active window → pattern match → trigger |
-| Structural Vision | Windows UI Automation | Read/interact with application UI as element tree |
-| Tool Forge | Code generation + Roslyn | Agent writes tool classes → compile → test → register |
-| CLI | Terminal client | PC interaction |
-| Signal | Signal Bot / Bridge | Mobile interaction |
-| Knowledge Graph | PostgreSQL 17 + pgvector | Entities, relationships, semantic search, tool usage tracking |
-| AI Layer | Microsoft.Agents.AI | LLM orchestration, tool dispatch |
+| Component | Project | Tech | Responsibility |
+|-----------|---------|------|----------------|
+| Backend API | Leontes.Api | .NET 10 Minimal API | Endpoints, auth, SSE streaming, rate limiting, CORS |
+| Processing Loop | Leontes.Api | IHostedService | Message intake → context → LLM → response |
+| Sentinel | Leontes.Worker | Windows Service | FS watcher, clipboard, calendar, active window → pattern match → trigger |
+| Signal Bridge | Leontes.Worker | Windows Service | Receives Signal messages, forwards to API |
+| Structural Vision | Leontes.Worker | Windows UI Automation | Read/interact with application UI as element tree |
+| CLI | Leontes.Cli | dotnet tool | PC interaction — chat, setup wizard |
+| Knowledge Graph | Shared (Infrastructure) | PostgreSQL 17 + pgvector | Entities, relationships, semantic search, tool usage tracking |
+| AI Layer | Shared (Infrastructure) | Microsoft.Agents.AI | LLM orchestration, tool dispatch |
+| Tool Forge | Shared (Infrastructure) | Roslyn + code gen | Agent writes tool classes → compile → test → register |
 
 ## Data Flow
 
 ```
-Sentinel:
+Sentinel (Worker):
   OS Events → Pattern Match → AI Layer (if needed) → CLI/Signal notification
 
-Structural Vision:
+Structural Vision (Worker):
   UI Automation → Element Tree → AI reads/interacts via API
 
 Channels:
-  CLI / Signal → Queue → Processing Loop → Synapse Graph
-                                          → LLM + Tools
-                                          → Response → Original Channel
+  CLI → HTTP → Api → Processing Loop → Synapse Graph
+                                       → LLM + Tools
+                                       → SSE Response → CLI
+
+  Signal → Worker → HTTP → Api → Processing Loop → Response → Worker → Signal
 
 Tool Forge:
   Gap detected → Generate tool class → Compile + test → User approval → Register
@@ -41,7 +44,7 @@ Tool Forge:
 
 ## Setup
 
-`leontes init` — interactive CLI wizard:
+`leontes init` — interactive CLI wizard (implemented in Leontes.Cli):
 1. PostgreSQL via Docker Compose (or existing connection string)
 2. AI provider + model + API key → .NET User Secrets
 3. Signal bot registration (guided steps)
@@ -50,12 +53,16 @@ Tool Forge:
 
 ## Auth
 
-Single-user. API key or JWT for CLI. Signal via bot registration.
+Single-user. API key or JWT for CLI ↔ Api. Signal via bot registration.
 
 ## Key Decisions
 
 | Decision | Rationale |
 |----------|-----------|
+| Two hosts (Api + Worker) + CLI tool | Api and Processing Loop are tightly coupled (SSE streaming). Sentinel needs Windows APIs (separate process). CLI is a user-facing tool. |
+| Processing Loop in Api, not Worker | Processing Loop handles HTTP requests from CLI and returns SSE streams — must live where Kestrel lives |
+| Worker as Windows Service | Sentinel needs OS-level access (file system, clipboard, active window). Must persist across user sessions. |
+| CLI as dotnet tool | Installed globally, invoked as `leontes` from anywhere. No backend project references — HTTP only. |
 | PostgreSQL for graph + vectors | One database for entities, relationships, pgvector search |
 | Windows UI Automation over screenshots | Structural, fast, cheap — no vision API calls |
 | Signal for mobile | E2E encrypted, no custom mobile app needed |
@@ -65,6 +72,6 @@ Single-user. API key or JWT for CLI. Signal via bot registration.
 
 ## Infrastructure
 
-- **Dev:** Docker Compose (PostgreSQL, backend with hot-reload)
-- **CI:** GitHub Actions (restore → build → test)
+- **Dev:** Docker Compose (PostgreSQL + Api with hot-reload). Worker runs natively on Windows.
+- **CI:** GitHub Actions (restore → build → test) — all projects including Worker, Cli, and tests
 - **Prod:** TBD

@@ -22,26 +22,24 @@ Talk to it from your terminal. Message it from your phone via Signal. Or don't t
 | **Tool Forge** | The agent writes, compiles, tests, and registers new tools at runtime. You approve before anything runs. |
 | **CLI + Signal** | Talk to it from your PC or message it from your phone. Same context, same memory. |
 
-## Quick start
-
-```bash
-leontes init        # Interactive setup: database, AI provider, Signal, Sentinel config
-docker compose up   # Start PostgreSQL + backend
-leontes             # Start talking
-```
-
 ## Architecture
 
-Two layers sharing one AI engine and one knowledge graph:
+Three executable projects sharing one AI engine and one knowledge graph:
+
+| Component | Project | Responsibility |
+|-----------|---------|----------------|
+| **Backend API** | `Leontes.Api` | HTTP endpoints, Processing Loop, SSE streaming, auto-migration, rate limiting |
+| **Worker** | `Leontes.Worker` | Windows Service: Sentinel (OS monitoring) + Signal bridge |
+| **CLI** | `Leontes.Cli` | dotnet tool (`leontes`): chat, setup wizard, user commands |
 
 ```
-Sentinel (FS / Clipboard / Calendar / Window)
+Sentinel (FS / Clipboard / Calendar / Window)  [Worker]
   --> Pattern Match --> AI Layer --> CLI or Signal notification
 
 Structural Vision (Windows UI Automation)
   --> Element Tree --> AI reads and interacts via accessibility API
 
-CLI / Signal --> Processing Loop --> Synapse Graph --> LLM + Tools --> Response
+CLI / Signal --> Processing Loop --> Synapse Graph --> LLM + Tools --> Response  [Api]
 ```
 
 **Stack:** .NET 10 Minimal API, PostgreSQL 17 + pgvector, Microsoft.Agents.AI, Windows UI Automation.
@@ -50,16 +48,83 @@ CLI / Signal --> Processing Loop --> Synapse Graph --> LLM + Tools --> Response
 
 ### Prerequisites
 
-- .NET 10 SDK
-- Docker & Docker Compose
-- Node.js (if working on future frontend)
+| Tool | Version | Purpose |
+|------|---------|---------|
+| [.NET SDK](https://dot.net/download) | 10+ | Build and run the backend |
+| [Docker](https://docs.docker.com/get-docker/) | Latest | Run PostgreSQL locally |
+| [Ollama](https://ollama.com/) | Latest | Local LLM inference |
+
+### First-time setup
+
+```bash
+# 1. Pull the AI model used for local development
+ollama pull qwen2.5:7b
+
+# 2. Create a .env file for Docker Compose (copy the example and adjust if needed)
+cp .env.example .env
+
+# 3. Set the database connection string for the API and Worker
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" \
+  "Host=localhost;Port=5432;Database=leontes;Username=leontes;Password=leontes" \
+  --project backend/src/Leontes.Api
+
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" \
+  "Host=localhost;Port=5432;Database=leontes;Username=leontes;Password=leontes" \
+  --project backend/src/Leontes.Worker
+```
+
+> **EF Core migrations:** The design-time factory reads `LEONTES_CONNECTION_STRING` from the environment. Set it before running `dotnet ef migrations add`:
+>
+> ```bash
+> # PowerShell
+> $env:LEONTES_CONNECTION_STRING="Host=localhost;Port=5432;Database=leontes;Username=leontes;Password=leontes"
+>
+> # Bash
+> export LEONTES_CONNECTION_STRING="Host=localhost;Port=5432;Database=leontes;Username=leontes;Password=leontes"
+> ```
 
 ### Running locally
 
+Open three terminals and run each step in order:
+
 ```bash
-docker compose up                                  # Full stack (PostgreSQL + backend)
-dotnet build backend/ && dotnet test backend/      # Build and test
-dotnet run --project backend/src/Leontes.Api       # Run backend directly
+# Terminal 1 — PostgreSQL
+docker compose up -d db
+
+# Terminal 2 — API (auto-migrates the database on first run)
+dotnet run --project backend/src/Leontes.Api
+
+# Terminal 3 — CLI chat
+dotnet run --project backend/src/Leontes.Cli
+```
+
+Once the CLI starts, type a message and hit Enter. That's it.
+
+The **Worker** (Sentinel + Signal bridge) is optional during development — most of its functionality is still in progress. If you want to run it:
+
+```bash
+dotnet run --project backend/src/Leontes.Worker      # Windows only
+```
+
+> **Note:** Ollama must be running before you start the API. If you installed Ollama normally it runs in the background automatically. If not, start it with `ollama serve`.
+
+### Build and test
+
+```bash
+dotnet build backend/
+dotnet test backend/ --configuration Release
+```
+
+### Health check
+
+The API exposes a `/_health` endpoint. You can verify everything is connected:
+
+```bash
+# Local development (default launch profile)
+curl http://localhost:5154/_health
+
+# Docker Compose
+curl http://localhost:5000/_health
 ```
 
 ### Secrets
