@@ -22,14 +22,6 @@ Talk to it from your terminal. Message it from your phone via Signal. Or don't t
 | **Tool Forge** | The agent writes, compiles, tests, and registers new tools at runtime. You approve before anything runs. |
 | **CLI + Signal** | Talk to it from your PC or message it from your phone. Same context, same memory. |
 
-## Quick start
-
-```bash
-docker compose up -d db                              # Start PostgreSQL
-dotnet run --project backend/src/Leontes.Api         # Start the API
-leontes                                              # Start talking
-```
-
 ## Architecture
 
 Three executable projects sharing one AI engine and one knowledge graph:
@@ -56,27 +48,58 @@ CLI / Signal --> Processing Loop --> Synapse Graph --> LLM + Tools --> Response 
 
 ### Prerequisites
 
-- .NET 10 SDK
-- Docker & Docker Compose (for PostgreSQL)
-- Ollama with a local model (e.g. `qwen2.5:7b`)
+| Tool | Version | Purpose |
+|------|---------|---------|
+| [.NET SDK](https://dot.net/download) | 10+ | Build and run the backend |
+| [Docker](https://docs.docker.com/get-docker/) | Latest | Run PostgreSQL locally |
+| [Ollama](https://ollama.com/) | Latest | Local LLM inference |
+
+### First-time setup
+
+```bash
+# 1. Pull the AI model used for local development
+ollama pull qwen2.5:7b
+```
 
 ### Running locally
 
+Open three terminals and run each step in order:
+
 ```bash
-docker compose up -d db                              # Start PostgreSQL
-dotnet run --project backend/src/Leontes.Api         # Start the API (auto-migrates DB)
-dotnet run --project backend/src/Leontes.Cli         # Start the CLI chat
-dotnet run --project backend/src/Leontes.Worker      # Start Sentinel (Windows only, optional)
+# Terminal 1 — PostgreSQL
+docker compose up -d db
+
+# Terminal 2 — API (auto-migrates the database on first run)
+dotnet run --project backend/src/Leontes.Api
+
+# Terminal 3 — CLI chat
+dotnet run --project backend/src/Leontes.Cli
 ```
 
-Build and test:
+Once the CLI starts, type a message and hit Enter. That's it.
+
+The **Worker** (Sentinel + Signal bridge) is optional during development — most of its functionality is still in progress. If you want to run it:
+
+```bash
+dotnet run --project backend/src/Leontes.Worker      # Windows only
+```
+
+> **Note:** Ollama must be running before you start the API. If you installed Ollama normally it runs in the background automatically. If not, start it with `ollama serve`.
+
+### Build and test
 
 ```bash
 dotnet build backend/
 dotnet test backend/ --configuration Release
 ```
 
-The Worker runs natively on Windows (needs OS APIs for Sentinel). It does not run in Docker.
+### Health check
+
+The API exposes a `/_health` endpoint. You can verify everything is connected:
+
+```bash
+curl http://localhost:5171/_health
+```
 
 ### Secrets
 
