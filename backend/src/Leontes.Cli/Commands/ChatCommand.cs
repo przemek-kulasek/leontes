@@ -12,6 +12,14 @@ public static class ChatCommand
 
         using var client = new LeontesApiClient();
 
+        var healthy = await client.HealthCheckAsync();
+        if (!healthy)
+        {
+            Console.Error.WriteLine("Cannot connect to Leontes API at http://localhost:5000");
+            Console.Error.WriteLine("Make sure the API is running: dotnet run --project backend/src/Leontes.Api");
+            return 1;
+        }
+
         while (true)
         {
             Console.Write("> ");
@@ -23,11 +31,22 @@ public static class ChatCommand
             if (input.Equals("exit", StringComparison.OrdinalIgnoreCase))
                 break;
 
-            Console.WriteLine("[Chat is not yet connected to the backend API]");
-            Console.WriteLine();
+            try
+            {
+                await foreach (var chunk in client.SendMessageAsync(input))
+                {
+                    Console.Write(chunk);
+                }
+                Console.WriteLine();
+                Console.WriteLine();
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.Error.WriteLine($"Error: {ex.Message}");
+                Console.WriteLine();
+            }
         }
 
-        await Task.CompletedTask;
         return 0;
     }
 }

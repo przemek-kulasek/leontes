@@ -25,9 +25,9 @@ Talk to it from your terminal. Message it from your phone via Signal. Or don't t
 ## Quick start
 
 ```bash
-leontes init        # Interactive setup: database, AI provider, Signal, Sentinel config
-docker compose up   # Start PostgreSQL + backend
-leontes             # Start talking
+docker compose up -d db                              # Start PostgreSQL
+dotnet run --project backend/src/Leontes.Api         # Start the API
+leontes                                              # Start talking
 ```
 
 ## Architecture
@@ -57,17 +57,23 @@ CLI / Signal --> Processing Loop --> Synapse Graph --> LLM + Tools --> Response 
 ### Prerequisites
 
 - .NET 10 SDK
-- Docker & Docker Compose
-- Node.js (if working on future frontend)
+- Docker & Docker Compose (for PostgreSQL)
+- Ollama with a local model (e.g. `qwen2.5:7b`)
 
 ### Running locally
 
 ```bash
-docker compose up                                  # Full stack (PostgreSQL + backend API)
-dotnet build backend/ && dotnet test backend/      # Build and test all projects
-dotnet run --project backend/src/Leontes.Api       # Run API directly
-dotnet run --project backend/src/Leontes.Worker    # Run Worker directly (Windows only)
-dotnet run --project backend/src/Leontes.Cli       # Run CLI directly
+docker compose up -d db                              # Start PostgreSQL
+dotnet run --project backend/src/Leontes.Api         # Start the API (auto-migrates DB)
+dotnet run --project backend/src/Leontes.Cli         # Start the CLI chat
+dotnet run --project backend/src/Leontes.Worker      # Start Sentinel (Windows only, optional)
+```
+
+Build and test:
+
+```bash
+dotnet build backend/
+dotnet test backend/ --configuration Release
 ```
 
 The Worker runs natively on Windows (needs OS APIs for Sentinel). It does not run in Docker.

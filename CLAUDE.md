@@ -150,14 +150,14 @@ Global ExceptionHandler (ExceptionHandler.cs implementing IExceptionHandler) ret
 
 ### Local Dev
 
-Docker Compose runs PostgreSQL + backend with hot-reload via `dotnet watch`. Worker runs natively on Windows (needs OS APIs for Sentinel).
+Docker Compose runs PostgreSQL. All .NET projects run natively for faster iteration and debugger access. Ollama must be running locally.
 
 ```bash
-docker compose up                                    # PostgreSQL + backend (Api)
-dotnet build backend/ && dotnet test backend/        # Build and test all projects
-dotnet run --project backend/src/Leontes.Api         # Run Api directly
-dotnet run --project backend/src/Leontes.Worker      # Run Worker directly (Windows only)
-dotnet run --project backend/src/Leontes.Cli         # Run CLI directly
+docker compose up -d db                              # PostgreSQL only
+dotnet run --project backend/src/Leontes.Api         # API (auto-migrates DB on startup)
+dotnet run --project backend/src/Leontes.Cli         # CLI chat
+dotnet run --project backend/src/Leontes.Worker      # Worker / Sentinel (Windows only)
+dotnet build backend/ && dotnet test backend/ --configuration Release  # Build and test
 ```
 
 Health checks: backend exposes `/_health` endpoint.

@@ -9,8 +9,7 @@ public static class EndpointExtensions
     {
         var api = app.MapGroup("/api/v1");
 
-        // Register feature endpoint groups here as they are implemented
-        // Example: api.MapChatEndpoints();
+        api.MapChatEndpoints();
 
         return app;
     }
