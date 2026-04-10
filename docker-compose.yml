@@ -1,16 +1,14 @@
 services:
   db:
     image: postgres:17
-    environment:
-      POSTGRES_USER: leontes
-      POSTGRES_PASSWORD: leontes
-      POSTGRES_DB: leontes
+    env_file:
+      - .env
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U leontes"]
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -23,7 +21,7 @@ services:
       - "5000:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=leontes;Username=leontes;Password=leontes
+      - ConnectionStrings__DefaultConnection=${LEONTES_CONNECTION_STRING}
     depends_on:
       db:
         condition: service_healthy

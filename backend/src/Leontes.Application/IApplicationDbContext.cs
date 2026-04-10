@@ -1,12 +1,12 @@
 using Leontes.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
 
 namespace Leontes.Application;
 
 public interface IApplicationDbContext
 {
-    DbSet<Conversation> Conversations { get; }
-    DbSet<Message> Messages { get; }
+    IQueryable<Conversation> Conversations { get; }
+    IQueryable<Message> Messages { get; }
 
+    void Add<TEntity>(TEntity entity) where TEntity : class;
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

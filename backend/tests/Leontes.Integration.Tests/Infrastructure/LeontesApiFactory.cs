@@ -16,6 +16,10 @@ public sealed class LeontesApiFactory : WebApplicationFactory<Program>, IAsyncLi
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        builder.UseSetting(
+            "ConnectionStrings:DefaultConnection",
+            _postgres.GetConnectionString());
+
         builder.ConfigureServices(services =>
         {
             var dbDescriptor = services.SingleOrDefault(

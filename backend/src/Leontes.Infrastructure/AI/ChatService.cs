@@ -35,7 +35,7 @@ public sealed class ChatService(
                     : request.Content,
                 LastMessageAt = DateTime.UtcNow
             };
-            _db.Conversations.Add(conversation);
+            _db.Add(conversation);
         }
         else
         {
@@ -50,8 +50,7 @@ public sealed class ChatService(
             Channel = channel,
             ConversationId = conversation.Id
         };
-        _db.Messages.Add(message);
-
+        _db.Add(message);
         await _db.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("User message {MessageId} saved to conversation {ConversationId}", message.Id, conversation.Id);
@@ -94,7 +93,7 @@ public sealed class ChatService(
             ConversationId = conversationId,
             IsComplete = true
         };
-        _db.Messages.Add(assistantMessage);
+        _db.Add(assistantMessage);
         await _db.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Assistant message {MessageId} saved to conversation {ConversationId}", assistantMessage.Id, conversationId);

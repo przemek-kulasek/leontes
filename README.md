@@ -59,7 +59,29 @@ CLI / Signal --> Processing Loop --> Synapse Graph --> LLM + Tools --> Response 
 ```bash
 # 1. Pull the AI model used for local development
 ollama pull qwen2.5:7b
+
+# 2. Create a .env file for Docker Compose (copy the example and adjust if needed)
+cp .env.example .env
+
+# 3. Set the database connection string for the API and Worker
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" \
+  "Host=localhost;Port=5432;Database=leontes;Username=leontes;Password=leontes" \
+  --project backend/src/Leontes.Api
+
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" \
+  "Host=localhost;Port=5432;Database=leontes;Username=leontes;Password=leontes" \
+  --project backend/src/Leontes.Worker
 ```
+
+> **EF Core migrations:** The design-time factory reads `LEONTES_CONNECTION_STRING` from the environment. Set it before running `dotnet ef migrations add`:
+>
+> ```bash
+> # PowerShell
+> $env:LEONTES_CONNECTION_STRING="Host=localhost;Port=5432;Database=leontes;Username=leontes;Password=leontes"
+>
+> # Bash
+> export LEONTES_CONNECTION_STRING="Host=localhost;Port=5432;Database=leontes;Username=leontes;Password=leontes"
+> ```
 
 ### Running locally
 

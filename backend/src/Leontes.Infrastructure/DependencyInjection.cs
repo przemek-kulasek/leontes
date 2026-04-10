@@ -42,11 +42,16 @@ public static class DependencyInjection
 
     private static void AddAiServices(IServiceCollection services, IConfiguration configuration)
     {
+        var provider = configuration["AiProvider:Provider"] ?? "Ollama";
         var endpoint = configuration["AiProvider:Endpoint"] ?? "http://localhost:11434";
         var model = configuration["AiProvider:Model"] ?? "qwen2.5:7b";
 
-        services.AddSingleton<IChatClient>(_ =>
-            new OllamaApiClient(new Uri(endpoint), model));
+        services.AddSingleton<IChatClient>(_ => provider switch
+        {
+            "Ollama" => new OllamaApiClient(new Uri(endpoint), model),
+            _ => throw new InvalidOperationException(
+                $"Unsupported AI provider '{provider}'. Supported values: Ollama.")
+        });
 
         services.AddSingleton<AIAgent>(sp =>
             new ChatClientAgent(

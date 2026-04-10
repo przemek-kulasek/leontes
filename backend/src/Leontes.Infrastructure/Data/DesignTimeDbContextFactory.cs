@@ -7,8 +7,12 @@ public sealed class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<App
 {
     public ApplicationDbContext CreateDbContext(string[] args)
     {
+        var connectionString = Environment.GetEnvironmentVariable("LEONTES_CONNECTION_STRING")
+            ?? throw new InvalidOperationException(
+                "Set the LEONTES_CONNECTION_STRING environment variable before running EF Core migrations.");
+
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseNpgsql("Host=localhost;Port=5432;Database=leontes;Username=leontes;Password=leontes")
+            .UseNpgsql(connectionString)
             .Options;
 
         return new ApplicationDbContext(options);

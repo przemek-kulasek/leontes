@@ -1,12 +1,22 @@
 namespace Leontes.Application;
 
-public sealed record PagedRequest(
-    int Page = 1,
-    int PageSize = 20,
-    string? SortBy = null,
-    string? SortDirection = null)
+public sealed record PagedRequest
 {
-    public int Page { get; } = Page < 1 ? 1 : Page;
-    public int PageSize { get; } = PageSize < 1 ? 1 : PageSize > 100 ? 100 : PageSize;
+    public PagedRequest(
+        int page = 1,
+        int pageSize = 20,
+        string? sortBy = null,
+        string? sortDirection = null)
+    {
+        Page = page < 1 ? 1 : page;
+        PageSize = pageSize < 1 ? 1 : pageSize > 100 ? 100 : pageSize;
+        SortBy = sortBy;
+        SortDirection = sortDirection;
+    }
+
+    public int Page { get; }
+    public int PageSize { get; }
+    public string? SortBy { get; }
+    public string? SortDirection { get; }
     public int Skip => (Page - 1) * PageSize;
 }

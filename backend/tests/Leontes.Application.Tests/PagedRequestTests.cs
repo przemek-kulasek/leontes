@@ -16,7 +16,7 @@ public sealed class PagedRequestTests
     [Fact]
     public void Constructor_WithNegativePage_ClampedToOne()
     {
-        var request = new PagedRequest(Page: -5);
+        var request = new PagedRequest(page: -5);
 
         Assert.Equal(1, request.Page);
     }
@@ -24,7 +24,7 @@ public sealed class PagedRequestTests
     [Fact]
     public void Constructor_WithExcessivePageSize_ClampedToHundred()
     {
-        var request = new PagedRequest(PageSize: 500);
+        var request = new PagedRequest(pageSize: 500);
 
         Assert.Equal(100, request.PageSize);
     }
@@ -32,7 +32,7 @@ public sealed class PagedRequestTests
     [Fact]
     public void Constructor_WithZeroPageSize_ClampedToOne()
     {
-        var request = new PagedRequest(PageSize: 0);
+        var request = new PagedRequest(pageSize: 0);
 
         Assert.Equal(1, request.PageSize);
     }
@@ -40,7 +40,7 @@ public sealed class PagedRequestTests
     [Fact]
     public void Skip_CalculatesCorrectOffset()
     {
-        var request = new PagedRequest(Page: 3, PageSize: 10);
+        var request = new PagedRequest(page: 3, pageSize: 10);
 
         Assert.Equal(20, request.Skip);
     }
