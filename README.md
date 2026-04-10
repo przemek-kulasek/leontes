@@ -120,7 +120,11 @@ dotnet test backend/ --configuration Release
 The API exposes a `/_health` endpoint. You can verify everything is connected:
 
 ```bash
-curl http://localhost:5171/_health
+# Local development (default launch profile)
+curl http://localhost:5154/_health
+
+# Docker Compose
+curl http://localhost:5000/_health
 ```
 
 ### Secrets

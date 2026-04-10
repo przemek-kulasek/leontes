@@ -1,6 +1,7 @@
 using Leontes.Application;
 using Leontes.Infrastructure;
 using Leontes.Worker.Sentinel;
+using Leontes.Worker.Signal;
 using Serilog;
 
 var builder = Host.CreateApplicationBuilder(args);
@@ -16,6 +17,7 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddHostedService<SentinelService>();
+builder.Services.AddHostedService<SignalBridgeService>();
 
 var host = builder.Build();
 host.Run();

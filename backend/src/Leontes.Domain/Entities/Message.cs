@@ -10,5 +10,7 @@ public sealed class Message : Entity
     public bool IsComplete { get; set; } = true;
 
     public Guid ConversationId { get; init; }
+
+    // Populated by EF Core navigation property loading
     public Conversation Conversation { get; init; } = null!;
 }

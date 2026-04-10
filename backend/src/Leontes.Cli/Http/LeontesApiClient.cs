@@ -13,7 +13,7 @@ public sealed class LeontesApiClient : IDisposable
     {
         _httpClient = new HttpClient
         {
-            BaseAddress = new Uri(baseUrl ?? "http://localhost:5000"),
+            BaseAddress = new Uri(baseUrl ?? "http://localhost:5154"),
             Timeout = TimeSpan.FromMinutes(5)
         };
 

@@ -40,15 +40,40 @@ public static class ChatEndpoints
         context.Response.Headers.CacheControl = "no-cache";
         context.Response.Headers.Connection = "keep-alive";
 
-        await foreach (var chunk in chatService.StreamResponseAsync(conversationId, cancellationToken))
+        try
         {
-            var data = JsonSerializer.Serialize(new { text = chunk });
-            await context.Response.WriteAsync($"event: chunk\ndata: {data}\n\n", cancellationToken);
-            await context.Response.Body.FlushAsync(cancellationToken);
-        }
+            await foreach (var chunk in chatService.StreamResponseAsync(conversationId, cancellationToken))
+            {
+                var data = JsonSerializer.Serialize(new { text = chunk });
+                await context.Response.WriteAsync($"event: chunk\ndata: {data}\n\n", cancellationToken);
+                await context.Response.Body.FlushAsync(cancellationToken);
+            }
 
-        await context.Response.WriteAsync("event: done\ndata: {}\n\n", cancellationToken);
-        await context.Response.Body.FlushAsync(cancellationToken);
+            await context.Response.WriteAsync("event: done\ndata: {}\n\n", CancellationToken.None);
+            await context.Response.Body.FlushAsync(CancellationToken.None);
+        }
+        catch (OperationCanceledException)
+        {
+            // Client disconnected — attempt terminal event on best-effort basis
+            try
+            {
+                await context.Response.WriteAsync("event: done\ndata: {}\n\n", CancellationToken.None);
+                await context.Response.Body.FlushAsync(CancellationToken.None);
+            }
+            catch { /* client already gone */ }
+        }
+        catch (Exception)
+        {
+            try
+            {
+                var errorData = JsonSerializer.Serialize(new { message = "An error occurred while streaming the response." });
+                await context.Response.WriteAsync($"event: error\ndata: {errorData}\n\n", CancellationToken.None);
+                await context.Response.Body.FlushAsync(CancellationToken.None);
+            }
+            catch { /* client already gone */ }
+
+            throw;
+        }
     }
 
     private static async Task<IResult> GetMessages(
@@ -58,7 +83,7 @@ public static class ChatEndpoints
         CancellationToken cancellationToken = default)
     {
         if (conversationId is null)
-            return Results.BadRequest("conversationId is required.");
+            throw new Leontes.Domain.Exceptions.ValidationException("conversationId is required.");
 
         var messages = await chatService.GetMessagesAsync(conversationId.Value, limit, cancellationToken);
         return Results.Ok(messages);

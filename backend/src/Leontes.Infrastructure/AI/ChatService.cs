@@ -5,6 +5,7 @@ using Leontes.Domain.Entities;
 using Leontes.Domain.Enums;
 using Microsoft.Agents.AI;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Leontes.Infrastructure.AI;
@@ -12,6 +13,7 @@ namespace Leontes.Infrastructure.AI;
 public sealed class ChatService(
     AIAgent _agent,
     IApplicationDbContext _db,
+    IServiceScopeFactory _scopeFactory,
     ILogger<ChatService> _logger) : IChatService
 {
     public async Task<Guid> SendMessageAsync(SendMessageRequest request, CancellationToken cancellationToken = default)
@@ -62,11 +64,11 @@ public sealed class ChatService(
         Guid conversationId,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var lastUserMessage = await _db.Messages
+        var lastUserMsg = await _db.Messages
             .AsNoTracking()
             .Where(m => m.ConversationId == conversationId && m.Role == MessageRole.User)
             .OrderByDescending(m => m.Created)
-            .Select(m => m.Content)
+            .Select(m => new { m.Content, m.Channel })
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new Domain.Exceptions.NotFoundException("No user message found for conversation.");
 
@@ -74,7 +76,7 @@ public sealed class ChatService(
 
         var responseBuilder = new System.Text.StringBuilder();
 
-        await foreach (var update in _agent.RunStreamingAsync(lastUserMessage, cancellationToken: cancellationToken))
+        await foreach (var update in _agent.RunStreamingAsync(lastUserMsg.Content, cancellationToken: cancellationToken))
         {
             var text = update.Text;
             if (!string.IsNullOrEmpty(text))
@@ -89,12 +91,15 @@ public sealed class ChatService(
             Id = Guid.NewGuid(),
             Role = MessageRole.Assistant,
             Content = responseBuilder.ToString(),
-            Channel = MessageChannel.Cli,
+            Channel = lastUserMsg.Channel,
             ConversationId = conversationId,
             IsComplete = true
         };
-        _db.Add(assistantMessage);
-        await _db.SaveChangesAsync(cancellationToken);
+
+        using var scope = _scopeFactory.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
+        db.Add(assistantMessage);
+        await db.SaveChangesAsync(CancellationToken.None);
 
         _logger.LogInformation("Assistant message {MessageId} saved to conversation {ConversationId}", assistantMessage.Id, conversationId);
     }

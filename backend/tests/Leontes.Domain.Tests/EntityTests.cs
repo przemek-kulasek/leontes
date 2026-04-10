@@ -11,7 +11,7 @@ public sealed class EntityTests
 
         Assert.Equal(Guid.Empty, entity.Id);
         Assert.Equal(default, entity.Created);
-        Assert.Equal(Guid.Empty, entity.CreatedBy);
+        Assert.Null(entity.CreatedBy);
         Assert.Null(entity.LastModified);
         Assert.Null(entity.LastModifiedBy);
     }

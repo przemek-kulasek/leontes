@@ -8,7 +8,9 @@ public static class DatabaseExtensions
 
         var initializer = scope.ServiceProvider.GetRequiredService<Infrastructure.ApplicationDbContextInitializer>();
 
-        await initializer.InitializeAsync();
-        await initializer.SeedAsync();
+        var cancellationToken = app.Lifetime.ApplicationStopping;
+
+        await initializer.InitializeAsync(cancellationToken);
+        await initializer.SeedAsync(cancellationToken);
     }
 }
