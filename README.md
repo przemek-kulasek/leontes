@@ -92,10 +92,10 @@ Open three terminals and run each step in order:
 docker compose up -d db
 
 # Terminal 2 — API (auto-migrates the database on first run)
-dotnet run --project backend/src/Leontes.Api
+dotnet run --project backend/src/Leontes.Api --configuration Release
 
 # Terminal 3 — CLI chat
-dotnet run --project backend/src/Leontes.Cli
+dotnet run --project backend/src/Leontes.Cli --configuration Release
 ```
 
 Once the CLI starts, type a message and hit Enter. That's it.
@@ -103,15 +103,17 @@ Once the CLI starts, type a message and hit Enter. That's it.
 The **Worker** (Sentinel + Signal bridge) is optional during development — most of its functionality is still in progress. If you want to run it:
 
 ```bash
-dotnet run --project backend/src/Leontes.Worker      # Windows only
+dotnet run --project backend/src/Leontes.Worker --configuration Release  # Windows only
 ```
+
+> **Note:** All `dotnet run` / `dotnet build` commands use `--configuration Release` because Windows Application Control (WDAC) blocks unsigned Debug-built DLLs.
 
 > **Note:** Ollama must be running before you start the API. If you installed Ollama normally it runs in the background automatically. If not, start it with `ollama serve`.
 
 ### Build and test
 
 ```bash
-dotnet build backend/
+dotnet build backend/ --configuration Release
 dotnet test backend/ --configuration Release
 ```
 
