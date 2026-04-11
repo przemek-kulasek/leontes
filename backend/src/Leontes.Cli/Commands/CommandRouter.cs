@@ -5,11 +5,12 @@ public static class CommandRouter
     public static async Task<int> RunAsync(string[] args)
     {
         var command = args.Length > 0 ? args[0].ToLowerInvariant() : "chat";
+        var remaining = args.Length > 1 ? args[1..] : [];
 
         return command switch
         {
-            "init" => await InitCommand.RunAsync(args[1..]),
-            "chat" => await ChatCommand.RunAsync(args[1..]),
+            "init" => await InitCommand.RunAsync(remaining),
+            "chat" => await ChatCommand.RunAsync(remaining),
             "--help" or "-h" => ShowHelp(),
             "--version" or "-v" => ShowVersion(),
             _ => ShowUnknownCommand(command)

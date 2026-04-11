@@ -46,9 +46,9 @@ public static class DependencyInjection
         var endpoint = configuration["AiProvider:Endpoint"] ?? "http://localhost:11434";
         var model = configuration["AiProvider:Model"] ?? "qwen2.5:7b";
 
-        services.AddSingleton<IChatClient>(_ => provider switch
+        services.AddSingleton<IChatClient>(_ => provider.ToLowerInvariant() switch
         {
-            "Ollama" => new OllamaApiClient(new Uri(endpoint), model),
+            "ollama" => new OllamaApiClient(new Uri(endpoint), model),
             _ => throw new InvalidOperationException(
                 $"Unsupported AI provider '{provider}'. Supported values: Ollama.")
         });
