@@ -6,6 +6,8 @@ using Serilog;
 
 var builder = Host.CreateApplicationBuilder(args);
 
+builder.Configuration.AddUserSecrets<Program>();
+
 builder.Services.AddWindowsService(options =>
     options.ServiceName = "Leontes Worker");
 
