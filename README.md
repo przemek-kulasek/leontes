@@ -118,6 +118,71 @@ The **Worker** (Sentinel + Signal bridge) is optional during development — mos
 dotnet run --project backend/src/Leontes.Worker --configuration Release  # Windows only
 ```
 
+### Signal setup
+
+Signal lets you message Leontes from your phone via E2E encrypted messaging. It uses [signal-cli-rest-api](https://github.com/bbernhard/signal-cli-rest-api) running in Docker — no Java needed on your machine.
+
+#### 1. Start the Signal container
+
+```bash
+docker compose up -d signal
+```
+
+This starts `signal-cli-rest-api` on port 8081.
+
+#### 2. Register a phone number
+
+You need a real phone number (prepaid SIM or VoIP) that can receive SMS.
+
+```bash
+# Request SMS verification
+curl -X POST http://localhost:8081/v1/register/+YOUR_PHONE_NUMBER
+
+# If a CAPTCHA is required, get a token from https://signalcaptchas.org/registration/generate
+# and pass it in the request body:
+curl -X POST http://localhost:8081/v1/register/+YOUR_PHONE_NUMBER \
+  -H "Content-Type: application/json" \
+  -d '{"captcha": "signal-recaptcha-v2.YOUR_TOKEN"}'
+```
+
+#### 3. Verify registration
+
+After receiving the SMS code:
+
+```bash
+curl -X POST http://localhost:8081/v1/register/+YOUR_PHONE_NUMBER/verify/CODE
+```
+
+#### 4. Configure Leontes Worker
+
+```bash
+# Set the registered phone number
+dotnet user-secrets set "Signal:PhoneNumber" "+YOUR_PHONE_NUMBER" \
+  --project backend/src/Leontes.Worker
+
+# Allow your personal phone to send messages to Leontes
+dotnet user-secrets set "Signal:AllowedSenders:0" "+YOUR_PERSONAL_NUMBER" \
+  --project backend/src/Leontes.Worker
+```
+
+#### 5. Start the Worker
+
+```bash
+dotnet run --project backend/src/Leontes.Worker --configuration Release
+```
+
+The Worker will connect to signal-cli-rest-api and start polling for messages. Send a message from your phone to the registered number — Leontes will respond.
+
+#### Troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| Worker logs "Signal REST API not available" | Check `docker compose ps signal` — container must be running on port 8081 |
+| Registration fails with 403 | CAPTCHA required — see step 2 above |
+| Messages ignored silently | Sender not in `AllowedSenders` — check Worker logs for "unknown sender" warning |
+| Worker logs "ApiKey not configured" | Run `leontes init` to generate and set the API key |
+| Port 8081 already in use | Change the port mapping in `docker-compose.yml` and update `Signal:BaseUrl` in Worker user secrets |
+
 > **Note:** All `dotnet run` / `dotnet build` commands use `--configuration Release` because Windows Application Control (WDAC) blocks unsigned Debug-built DLLs. The CLI is installed as a global dotnet tool (see First-time setup) and is not affected.
 
 > **Note:** Ollama must be running before you start the API. If you installed Ollama normally it runs in the background automatically. If not, start it with `ollama serve`.

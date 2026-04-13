@@ -1,4 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Worker"><PropertyGroup>  <UserSecretsId>7079f596-dc6d-426f-8d37-dacd99b8648a</UserSecretsId>
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <UserSecretsId>7079f596-dc6d-426f-8d37-dacd99b8648a</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

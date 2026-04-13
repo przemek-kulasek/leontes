@@ -12,5 +12,6 @@
     <Project Path="tests/Leontes.Domain.Tests/Leontes.Domain.Tests.csproj" />
     <Project Path="tests/Leontes.Infrastructure.Tests/Leontes.Infrastructure.Tests.csproj" />
     <Project Path="tests/Leontes.Integration.Tests/Leontes.Integration.Tests.csproj" />
+    <Project Path="tests/Leontes.Worker.Tests/Leontes.Worker.Tests.csproj" />
   </Folder>
 </Solution>
