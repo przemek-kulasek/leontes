@@ -14,11 +14,15 @@ public sealed class LeontesApiFactory : WebApplicationFactory<Program>, IAsyncLi
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine")
         .Build();
 
+    public const string TestApiKey = "lnt_test-api-key-for-integration-tests";
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseSetting(
             "ConnectionStrings:DefaultConnection",
             _postgres.GetConnectionString());
+
+        builder.UseSetting("Authentication:ApiKey", TestApiKey);
 
         builder.ConfigureServices(services =>
         {

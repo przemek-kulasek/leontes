@@ -1,3 +1,4 @@
+using Leontes.Cli.Config;
 using Leontes.Cli.Http;
 
 namespace Leontes.Cli.Commands;
@@ -10,12 +11,13 @@ public static class ChatCommand
         Console.WriteLine("Type a message and press Enter. Type 'exit' to quit.");
         Console.WriteLine();
 
-        using var client = new LeontesApiClient();
+        var config = new CliConfiguration();
+        using var client = new LeontesApiClient(config.BaseUrl, config.ApiKey);
 
         var healthy = await client.HealthCheckAsync();
         if (!healthy)
         {
-            Console.Error.WriteLine("Cannot connect to Leontes API at http://localhost:5000");
+            Console.Error.WriteLine($"Cannot connect to Leontes API at {config.BaseUrl}");
             Console.Error.WriteLine("Make sure the API is running: dotnet run --project backend/src/Leontes.Api");
             return 1;
         }

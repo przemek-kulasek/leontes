@@ -9,7 +9,8 @@ namespace Leontes.Integration.Tests;
 public sealed class ChatEndpointTests(LeontesApiFactory factory)
     : IClassFixture<LeontesApiFactory>
 {
-    private readonly HttpClient _client = factory.CreateClient();
+    private readonly HttpClient _client = factory.CreateClient()
+        .WithApiKey(LeontesApiFactory.TestApiKey);
 
     [Fact]
     public async Task SendMessage_ValidRequest_StreamsResponse()

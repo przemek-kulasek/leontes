@@ -18,6 +18,7 @@ builder.Services.AddExceptionHandler<ExceptionHandler>();
 
 builder.Services.AddApiCors();
 builder.Services.AddApiRateLimiting();
+builder.Services.AddApiKeyAuthentication(builder.Configuration);
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -36,6 +37,7 @@ app.UseExceptionHandler();
 app.UseSerilogRequestLogging();
 app.UseApiCors();
 app.UseApiRateLimiting();
+app.UseApiAuthentication();
 
 if (app.Environment.IsDevelopment())
 {

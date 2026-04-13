@@ -71,7 +71,21 @@ dotnet user-secrets set "ConnectionStrings:DefaultConnection" \
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" \
   "Host=localhost;Port=5432;Database=leontes;Username=leontes;Password=leontes" \
   --project backend/src/Leontes.Worker
+
+# 4. Install the CLI as a dotnet tool
+dotnet pack backend/src/Leontes.Cli/ --configuration Release -o ./nupkg
+dotnet tool install --global --add-source ./nupkg Leontes.Cli
+
+# 5. Generate and configure the API key (sets User Secrets for API, Worker, and CLI)
+leontes init
 ```
+
+> **Reinstalling the CLI after code changes:** Uninstall first, then pack and install again:
+> ```bash
+> dotnet tool uninstall --global Leontes.Cli
+> dotnet pack backend/src/Leontes.Cli/ --configuration Release -o ./nupkg
+> dotnet tool install --global --add-source ./nupkg Leontes.Cli
+> ```
 
 > **EF Core migrations:** The design-time factory reads `LEONTES_CONNECTION_STRING` from the environment. Set it before running `dotnet ef migrations add`:
 >
@@ -85,8 +99,6 @@ dotnet user-secrets set "ConnectionStrings:DefaultConnection" \
 
 ### Running locally
 
-Open three terminals and run each step in order:
-
 ```bash
 # Terminal 1 — PostgreSQL
 docker compose up -d db
@@ -95,7 +107,7 @@ docker compose up -d db
 dotnet run --project backend/src/Leontes.Api --configuration Release
 
 # Terminal 3 — CLI chat
-dotnet run --project backend/src/Leontes.Cli --configuration Release
+leontes chat
 ```
 
 Once the CLI starts, type a message and hit Enter. That's it.
@@ -106,7 +118,7 @@ The **Worker** (Sentinel + Signal bridge) is optional during development — mos
 dotnet run --project backend/src/Leontes.Worker --configuration Release  # Windows only
 ```
 
-> **Note:** All `dotnet run` / `dotnet build` commands use `--configuration Release` because Windows Application Control (WDAC) blocks unsigned Debug-built DLLs.
+> **Note:** All `dotnet run` / `dotnet build` commands use `--configuration Release` because Windows Application Control (WDAC) blocks unsigned Debug-built DLLs. The CLI is installed as a global dotnet tool (see First-time setup) and is not affected.
 
 > **Note:** Ollama must be running before you start the API. If you installed Ollama normally it runs in the background automatically. If not, start it with `ollama serve`.
 
