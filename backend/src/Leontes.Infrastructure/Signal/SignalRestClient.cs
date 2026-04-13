@@ -22,7 +22,13 @@ public sealed class SignalRestClient(
         var phoneNumber = options.Value.PhoneNumber;
 
         var response = await httpClient.GetAsync($"/v1/receive/{phoneNumber}", cancellationToken);
-        response.EnsureSuccessStatusCode();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            logger.LogError("Signal receive failed with {StatusCode}: {Body}", (int)response.StatusCode, body);
+            response.EnsureSuccessStatusCode();
+        }
 
         var envelopes = await response.Content.ReadFromJsonAsync<List<SignalEnvelope>>(JsonOptions, cancellationToken)
             ?? [];
