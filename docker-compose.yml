@@ -14,7 +14,7 @@ services:
       retries: 5
 
   signal:
-    image: bbernhard/signal-cli-rest-api:latest
+    image: bbernhard/signal-cli-rest-api:0.98
     ports:
       - "8081:8080"
     volumes:

@@ -40,13 +40,13 @@ signal-cli-rest-api runs as a Docker container exposing a REST API on port 8080:
 ```yaml
 # Added to docker-compose.yml
 signal:
-  image: bbernhard/signal-cli-rest-api:latest
+  image: bbernhard/signal-cli-rest-api:0.98
   ports:
     - "8081:8080"
   volumes:
     - signal-data:/home/.local/share/signal-cli
   environment:
-    - MODE=json-rpc
+    - MODE=normal
 ```
 
 The Worker communicates with it via standard HTTP calls — no TCP sockets, no JSON-RPC parsing, no Java on the host.
@@ -91,7 +91,7 @@ Leontes.Worker / SignalBridgeService
     |  polls for incoming messages via GET /v1/receive
     |  forwards to API via HTTP
     v
-Leontes.Api (POST /api/v1/chat/messages, Channel: "Signal")
+Leontes.Api (POST /api/v1/messages, Channel: "Signal")
     |  processes via AI agent
     |  streams response via SSE
     v
@@ -174,7 +174,7 @@ Flow:
 2. Poll for incoming messages on a configurable interval (default: 2 seconds)
 3. For each incoming message:
    a. Check sender against `AllowedSenders` — skip if not allowed
-   b. Forward to API: `POST /api/v1/chat/messages` with `{ "content": "...", "channel": "Signal" }` using Bearer token auth
+   b. Forward to API: `POST /api/v1/messages` with `{ "content": "...", "channel": "Signal" }` using Bearer token auth
    c. Read the SSE response stream from the API
    d. Collect all `chunk` events into a complete response
    e. Send the assembled response back to the sender via `ISignalClient.SendMessageAsync`
@@ -188,13 +188,13 @@ Added to the existing `docker-compose.yml`:
 
 ```yaml
 signal:
-  image: bbernhard/signal-cli-rest-api:latest
+  image: bbernhard/signal-cli-rest-api:0.98
   ports:
     - "8081:8080"
   volumes:
     - signal-data:/home/.local/share/signal-cli
   environment:
-    - MODE=json-rpc
+    - MODE=normal
   restart: unless-stopped
 
 volumes:

@@ -41,8 +41,11 @@ public sealed class SignalRestClient(
             if (data?.DataMessage?.Message is null)
                 continue;
 
+            if (string.IsNullOrEmpty(data.Source))
+                continue;
+
             messages.Add(new SignalIncomingMessage(
-                Sender: data.Source ?? string.Empty,
+                Sender: data.Source,
                 Content: data.DataMessage.Message,
                 Timestamp: data.DataMessage.Timestamp));
         }

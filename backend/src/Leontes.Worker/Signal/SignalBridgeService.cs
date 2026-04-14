@@ -30,6 +30,9 @@ public sealed class SignalBridgeService(
             return;
         }
 
+        if (options.AllowedSenders.Count == 0)
+            logger.LogWarning("Signal:AllowedSenders is empty — all incoming messages will be rejected until at least one sender is configured");
+
         logger.LogInformation("Signal bridge service starting — polling every {PollInterval}s", options.PollIntervalSeconds);
 
         await WaitForSignalAvailabilityAsync(stoppingToken);
@@ -130,10 +133,7 @@ public sealed class SignalBridgeService(
     {
         var client = httpClientFactory.CreateClient("LeontesApi");
 
-        var apiBaseUrl = configuration["Api:BaseUrl"] ?? "http://localhost:5154";
-        var requestUri = $"{apiBaseUrl}/api/v1/messages";
-
-        using var request = new HttpRequestMessage(HttpMethod.Post, requestUri);
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/messages");
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
 
         var payload = JsonSerializer.Serialize(new { content, channel = "Signal" });
@@ -148,7 +148,7 @@ public sealed class SignalBridgeService(
     private static bool IsAllowedSender(string sender, List<string> allowedSenders)
     {
         if (allowedSenders.Count == 0)
-            return true;
+            return false;
 
         return allowedSenders.Contains(sender, StringComparer.OrdinalIgnoreCase);
     }

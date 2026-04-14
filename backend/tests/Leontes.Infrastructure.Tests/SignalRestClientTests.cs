@@ -76,6 +76,38 @@ public sealed class SignalRestClientTests
     }
 
     [Fact]
+    public async Task ReceiveMessagesAsync_WithMissingSource_SkipsEnvelope()
+    {
+        var responseJson = """
+        [
+            {
+                "envelope": {
+                    "source": null,
+                    "dataMessage": {
+                        "message": "No sender",
+                        "timestamp": 1234567890
+                    }
+                }
+            },
+            {
+                "envelope": {
+                    "dataMessage": {
+                        "message": "Also no sender",
+                        "timestamp": 1234567891
+                    }
+                }
+            }
+        ]
+        """;
+
+        var client = CreateClient(HttpStatusCode.OK, responseJson);
+
+        var messages = await client.ReceiveMessagesAsync(CancellationToken.None);
+
+        Assert.Empty(messages);
+    }
+
+    [Fact]
     public async Task ReceiveMessagesAsync_WithMultipleMessages_ReturnsAll()
     {
         var responseJson = """
@@ -108,9 +140,11 @@ public sealed class SignalRestClientTests
     public async Task SendMessageAsync_SendsCorrectPayload()
     {
         string? capturedBody = null;
-        var handler = new FakeHttpMessageHandler(HttpStatusCode.OK, "{}", request =>
+        var handler = new FakeHttpMessageHandler(HttpStatusCode.OK, "{}", async request =>
         {
-            capturedBody = request.Content?.ReadAsStringAsync().GetAwaiter().GetResult();
+            capturedBody = request.Content is not null
+                ? await request.Content.ReadAsStringAsync()
+                : null;
         });
 
         var client = CreateClient(handler);
@@ -171,10 +205,10 @@ public sealed class SignalRestClientTests
     {
         private readonly HttpStatusCode _statusCode;
         private readonly string _responseBody;
-        private readonly Action<HttpRequestMessage>? _onRequest;
+        private readonly Func<HttpRequestMessage, Task>? _onRequest;
         private readonly Exception? _exception;
 
-        public FakeHttpMessageHandler(HttpStatusCode statusCode, string responseBody, Action<HttpRequestMessage>? onRequest = null)
+        public FakeHttpMessageHandler(HttpStatusCode statusCode, string responseBody, Func<HttpRequestMessage, Task>? onRequest = null)
         {
             _statusCode = statusCode;
             _responseBody = responseBody;
@@ -188,17 +222,18 @@ public sealed class SignalRestClientTests
             _responseBody = string.Empty;
         }
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             if (_exception is not null)
                 throw _exception;
 
-            _onRequest?.Invoke(request);
+            if (_onRequest is not null)
+                await _onRequest(request);
 
-            return Task.FromResult(new HttpResponseMessage(_statusCode)
+            return new HttpResponseMessage(_statusCode)
             {
                 Content = new StringContent(_responseBody, Encoding.UTF8, "application/json")
-            });
+            };
         }
     }
 }
