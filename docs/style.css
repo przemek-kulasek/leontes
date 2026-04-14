@@ -172,6 +172,124 @@ section + section {
   margin-bottom: 48px;
 }
 
+/* ─── hero sub ────────────────────────────────────────────── */
+
+.hero-sub {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  max-width: 480px;
+  margin: -16px auto 40px;
+  line-height: 1.6;
+}
+
+/* ─── pipeline ────────────────────────────────────────────── */
+
+.pipeline {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  margin-bottom: 32px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.pipeline-stage {
+  flex: 1;
+  min-width: 140px;
+  background: var(--bg-card);
+  border: 1px solid var(--bg-border);
+  border-radius: var(--radius);
+  padding: 20px 16px;
+  transition: border-color 0.2s;
+}
+
+.pipeline-stage:hover {
+  border-color: var(--teal);
+}
+
+.pipeline-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--teal-dim);
+  border: 1px solid rgba(0, 212, 184, 0.3);
+  color: var(--teal);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.pipeline-name {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+
+.pipeline-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+.pipeline-arrow {
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  color: var(--teal);
+  font-size: 1.2rem;
+  margin-top: 32px;
+  flex-shrink: 0;
+}
+
+.pipeline-footnote {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  max-width: 640px;
+  line-height: 1.6;
+}
+
+/* ─── dual grid ──────────────────────────────────────────── */
+
+.dual-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+/* ─── architecture ───────────────────────────────────────── */
+
+.arch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.arch-grid code {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  color: var(--teal);
+  background: var(--teal-dim);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.arch-footnote {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  opacity: 0.7;
+  font-style: italic;
+  line-height: 1.6;
+}
+
 /* ─── features ────────────────────────────────────────────── */
 
 .features-grid {
@@ -360,6 +478,21 @@ section + section {
 
   .hero-logo {
     width: 160px;
+  }
+
+  .pipeline {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .pipeline-arrow {
+    transform: rotate(90deg);
+    margin: 4px auto;
+    padding: 2px 0;
+  }
+
+  .pipeline-stage {
+    min-width: unset;
   }
 
   .footer-inner {

@@ -4,45 +4,81 @@
   <img src="docs/logo.png" alt="Leontes" width="320" />
 </p>
 
-**An AI agent that lives in your OS, acts before you ask, and writes its own tools.**
+**A self-hosted AI agent that thinks in stages, acts before you ask, and writes its own tools.**
 
 [leontes.dev](https://leontes.dev)
 
-Leontes is a self-hosted, proactive AI agent for Windows. It monitors your system events, understands application UI structurally, remembers context across conversations through a knowledge graph, and — when it encounters something it can't do — writes a new tool, tests it, and asks you to approve it.
+Leontes is a proactive AI agent for Windows with a neuroscience-inspired cognitive architecture. It doesn't just respond to what you type — it monitors your system, remembers what matters, and extends its own capabilities at runtime.
 
 Talk to it from your terminal. Message it from your phone via Signal or Telegram. Or don't talk to it at all — it'll notice when you need help.
 
+## How it thinks
+
+Most AI agents are a `while(true)` loop around a chat API. Leontes runs a 5-stage cognitive pipeline modeled on Global Workspace Theory and Kahneman's dual-process model:
+
+```
+Perceive ──► Enrich ──► Plan ──► Execute ──► Reflect
+   │            │          │         │           │
+entities    memories    strategy   response    learning
+ + intent   + graph     + tools    + streaming  + graph updates
+```
+
+Each stage is an independent executor. The pipeline checkpoints after every stage — if the server crashes, it resumes from where it left off. The agent can pause mid-pipeline to ask you a question and continue when you answer.
+
+### System 1 + System 2
+
+Not everything goes through the full pipeline. Leontes uses a dual-process architecture:
+
+- **System 1 (Sentinel):** Fast, local, free. Watches your file downloads, clipboard, calendar, and active windows. Applies heuristic filters — regex, frequency analysis, time rules. No LLM calls. Handles most OS events by reflex.
+- **System 2 (Thinking Pipeline):** Slow, deliberate, powerful. The full 5-stage pipeline with LLM reasoning. Only activated when System 1 detects something it can't handle alone.
+
+The result: your agent notices when you copy an IBAN and asks if you want to find the matching invoice — without burning tokens on every clipboard change.
+
 ## What makes this different
 
-| Feature | What it does |
-|---------|-------------|
-| **Sentinel** | Watches file downloads, clipboard, calendar, and active windows. Triggers suggestions without you asking. |
-| **Structural Vision** | Reads application UI via Windows UI Automation — no screenshots, no pixel matching. Sees buttons and text as code. |
-| **Synapse Graph** | Knowledge graph linking people, files, and projects. "Send this to the lead dev" just works. |
-| **Tool Forge** | The agent writes, compiles, tests, and registers new tools at runtime. You approve before anything runs. |
-| **CLI + Signal + Telegram** | Talk to it from your PC or message it from your phone via Signal (E2E encrypted) or Telegram (official Bot API). Same context, same memory. |
+| Capability | How |
+|---|---|
+| **Cognitive Pipeline** | 5-stage thinking process (Perceive → Enrich → Plan → Execute → Reflect) with checkpoint recovery and mid-task human interaction |
+| **Hierarchical Memory** | 4 memory types: Working (context), Episodic (past events via pgvector), Semantic (knowledge graph), Procedural (learned skills) |
+| **Proactive Intelligence** | Dual-process Sentinel — local heuristics filter OS events, only surprising ones reach the LLM |
+| **Structural Vision** | Reads application UI via Windows UI Automation — sees buttons and text as code, not pixels |
+| **Self-Extending** | Writes, compiles, tests, and registers new tools at runtime via Roslyn. You approve before anything runs |
+| **Confidence Scoring** | Signals how certain it is (0–1). Asks for clarification when uncertain, proceeds confidently when sure |
+| **Show Your Work** | Every decision is traced. Ask "Why did you do that?" and get a real answer from stored pipeline traces |
+| **Cost Aware** | Token budgets per feature, automatic model routing (small model for simple tasks, large for complex), throttling before you hit limits |
+| **Privacy First** | All monitoring is opt-in. Review, export, or delete any stored data. "Forget Project X" cascades across all tables |
+| **Multi-Channel** | CLI + Signal (E2E encrypted) + Telegram. Same brain, same memory, any device |
+| **Protocol Standards** | AG-UI (web frontends), MCP (external tool servers), A2A (agent-to-agent) — all via Microsoft Agent Framework |
 
 ## Architecture
 
-Three executable projects sharing one AI engine and one knowledge graph:
+Three executable projects sharing one cognitive engine and one knowledge graph:
 
 | Component | Project | Responsibility |
 |-----------|---------|----------------|
-| **Backend API** | `Leontes.Api` | HTTP endpoints, Processing Loop, SSE streaming, auto-migration, rate limiting |
-| **Worker** | `Leontes.Worker` | Windows Service: Sentinel (OS monitoring) + Signal bridge + Telegram bridge |
-| **CLI** | `Leontes.Cli` | dotnet tool (`leontes`): chat, setup wizard, user commands |
+| **Backend API** | `Leontes.Api` | Thinking Pipeline, HTTP endpoints, SSE streaming, auto-migration, rate limiting |
+| **Worker** | `Leontes.Worker` | Windows Service: Sentinel (OS monitoring) + Signal/Telegram bridges |
+| **CLI** | `Leontes.Cli` | dotnet tool (`leontes`): chat, setup wizard, privacy controls, budget dashboard |
 
 ```
-Sentinel (FS / Clipboard / Calendar / Window)  [Worker]
-  --> Pattern Match --> AI Layer --> CLI or Signal notification
+                         ┌─────────────────────────┐
+                         │     Thinking Pipeline    │
+                         │  Perceive → Enrich →     │
+  CLI ──────────────►    │  Plan → Execute → Reflect│    ──► Response
+  Signal ───────────►    │         ▲         │      │
+  Telegram ─────────►    │    Memory +    Tools +   │
+  Sentinel ─────────►    │    Graph      Forge      │
+                         └─────────────────────────┘
 
-Structural Vision (Windows UI Automation)
-  --> Element Tree --> AI reads and interacts via accessibility API
-
-CLI / Signal / Telegram --> Processing Loop --> Synapse Graph --> LLM + Tools --> Response  [Api]
+  Sentinel (System 1)                  Memory (4 types)
+  FS / Clipboard / Calendar / Window   Working / Episodic / Semantic / Procedural
+  → Heuristic Filter → Rate Limit     → pgvector + Recursive CTEs
+  → Escalate only surprises            → Graph-Augmented Retrieval
 ```
 
-**Stack:** .NET 10 Minimal API, PostgreSQL 17 + pgvector, Microsoft.Agents.AI, Windows UI Automation.
+**Stack:** .NET 10, PostgreSQL 17 + pgvector, Microsoft.Agents.AI + Workflows, Windows UI Automation, Roslyn.
+
+**Inspired by:** Global Workspace Theory (Dehaene), Dual-Process Theory (Kahneman), Generative Agents (Park et al.), Voyager (Wang et al.), Free Energy Principle (Friston).
 
 ## Development
 
@@ -112,7 +148,7 @@ leontes chat
 
 Once the CLI starts, type a message and hit Enter. That's it.
 
-The **Worker** (Sentinel + Signal bridge) is optional during development — most of its functionality is still in progress. If you want to run it:
+The **Worker** (Sentinel + Signal/Telegram bridges) is optional during development — most of its functionality is still in progress. If you want to run it:
 
 ```bash
 dotnet run --project backend/src/Leontes.Worker --configuration Release  # Windows only
@@ -325,9 +361,31 @@ Use [.NET User Secrets](https://learn.microsoft.com/en-us/aspnet/core/security/a
 
 GitHub Actions: restore, build, test on push to `main`, `develop`, `feature/*`. Must pass before merge.
 
+## Feature Roadmap
+
+| # | Feature | Status |
+|---|---|---|
+| 10 | CLI Chat | ✅ Implemented |
+| 20 | Conversation Memory | ✅ Implemented (superseded by 70) |
+| 30 | PoC / Setup Wizard | ✅ Implemented |
+| 40 | API Authentication | ✅ Implemented |
+| 50 | Signal Support | ✅ Implemented |
+| 55 | Proactive Communication | 📋 Specified |
+| 60 | Telegram Support | ✅ Implemented |
+| 65 | Thinking Pipeline | 📋 Specified |
+| 70 | Hierarchical Memory | 📋 Specified |
+| 75 | Error Recovery & Resilience | 📋 Specified |
+| 80 | Sentinel Intelligence | 📋 Specified |
+| 85 | Observability & Cognitive Telemetry | 📋 Specified |
+| 90 | Structural Vision | 📋 Specified |
+| 95 | Privacy & Data Governance | 📋 Specified |
+| 100 | Tool Forge | 📋 Specified |
+| 105 | Cost Control & Budget Management | 📋 Specified |
+| 110 | Industry Protocol Standards (AG-UI, MCP, A2A) | 📋 Specified |
+
 ## Status
 
-Early development. MVP scope: Sentinel (file system, clipboard, calendar, active window), Structural Vision, Synapse Graph, Tool Forge (autonomous with user approval), CLI + Signal + Telegram.
+Early development. Core infrastructure (CLI, auth, Signal, Telegram) is implemented. The cognitive architecture (17 feature specs) is fully designed and ready for implementation.
 
 ## License
 

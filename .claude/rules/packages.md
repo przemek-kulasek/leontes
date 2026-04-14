@@ -21,7 +21,7 @@ paths: "**/*.cs,**/*.ts,**/*.tsx,**/*.csproj,**/package.json,**/Directory.Packag
 
 ### Approved NuGet Packages
 
-**AI & LLM:** Microsoft.Agents.AI, Microsoft.Extensions.AI, Microsoft.Extensions.AI.OpenAI, OllamaSharp
+**AI & LLM:** Microsoft.Agents.AI, Microsoft.Agents.AI.Workflows, Microsoft.Agents.AI.AGUI, Microsoft.Agents.AI.Hosting.AGUI.AspNetCore, Microsoft.Agents.AI.A2A, Microsoft.Agents.AI.Hosting.A2A, Microsoft.Agents.AI.Hosting.A2A.AspNetCore, Microsoft.Extensions.AI, Microsoft.Extensions.AI.OpenAI, OllamaSharp
 
 **Data & Persistence:** Microsoft.EntityFrameworkCore, Microsoft.EntityFrameworkCore.Design, Npgsql.EntityFrameworkCore.PostgreSQL, Pgvector.EntityFrameworkCore
 

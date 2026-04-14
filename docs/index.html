@@ -3,31 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Leontes is an open-source, self-hosted AI agent for Windows that monitors your OS, reads application UI structurally, builds its own tools, and reaches you on Signal or Telegram. Proactive automation without cloud dependency." />
-  <meta name="keywords" content="AI agent, Windows AI assistant, open source AI, self-hosted AI, proactive AI, desktop automation, Windows automation, UI automation, Signal bot, Telegram bot, knowledge graph, local AI agent, privacy-first AI" />
+  <meta name="description" content="Leontes is a self-hosted AI agent for Windows with a neuroscience-inspired cognitive pipeline. It thinks in stages, monitors your OS, builds its own tools, and explains its reasoning. Open source." />
+  <meta name="keywords" content="AI agent, cognitive architecture, Windows AI assistant, open source AI, self-hosted AI, proactive AI, desktop automation, UI automation, knowledge graph, tool generation, Signal bot, Telegram bot, AG-UI, MCP, A2A, local AI agent, privacy-first AI, neuroscience AI" />
   <meta name="robots" content="index, follow" />
   <link rel="canonical" href="https://leontes.dev/" />
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Leontes" />
-  <meta property="og:title" content="Leontes — Open-Source Proactive AI Agent for Windows" />
-  <meta property="og:description" content="An AI agent that lives in your OS, monitors your workflow, reads UI structurally, builds its own tools, and reaches you via CLI, Signal, or Telegram. Self-hosted and open source." />
+  <meta property="og:title" content="Leontes — AI Agent with a Cognitive Architecture" />
+  <meta property="og:description" content="A self-hosted AI agent that thinks in stages, monitors your OS, builds its own tools, and shows its work. Neuroscience-inspired. Open source. Windows." />
   <meta property="og:image" content="https://leontes.dev/logo.png" />
   <meta property="og:url" content="https://leontes.dev/" />
   <meta property="og:locale" content="en_US" />
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Leontes — Proactive AI Agent for Windows" />
-  <meta name="twitter:description" content="Open-source AI agent that monitors your OS, reads UI structurally, builds its own tools, and reaches you on Signal or Telegram." />
+  <meta name="twitter:title" content="Leontes — AI Agent with a Cognitive Architecture" />
+  <meta name="twitter:description" content="Self-hosted AI agent that thinks in stages, monitors your OS, builds its own tools, and explains its reasoning. Open source." />
   <meta name="twitter:image" content="https://leontes.dev/logo.png" />
-  <title>Leontes — Open-Source Proactive AI Agent for Windows</title>
+  <title>Leontes — AI Agent with a Cognitive Architecture</title>
   <!-- Structured Data -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "Leontes",
-    "description": "An open-source, self-hosted AI agent for Windows that proactively monitors your OS, reads application UI via accessibility APIs, maintains a knowledge graph of your people and files, builds its own tools, and communicates via CLI, Signal, or Telegram.",
+    "description": "A self-hosted AI agent for Windows with a neuroscience-inspired cognitive architecture. Thinks in 5 stages (Perceive, Enrich, Plan, Execute, Reflect), monitors OS events through dual-process filtering, builds a hierarchical knowledge graph, generates its own tools at runtime, and explains every decision it makes.",
     "url": "https://leontes.dev",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "Windows",
@@ -46,11 +46,18 @@
     "codeRepository": "https://github.com/przemek-kulasek/leontes",
     "programmingLanguage": ["C#", ".NET"],
     "featureList": [
-      "Proactive OS monitoring (file system, clipboard, calendar, active window)",
+      "5-stage cognitive pipeline (Perceive, Enrich, Plan, Execute, Reflect)",
+      "Dual-process intelligence: fast heuristics + deliberate LLM reasoning",
+      "Hierarchical memory: working, episodic, semantic, procedural",
+      "Knowledge graph with graph-augmented retrieval (GraphRAG)",
+      "Runtime tool generation with Roslyn compilation and user approval",
       "Structural UI reading via Windows UI Automation",
-      "Knowledge graph linking people, files, and projects",
-      "Self-extending tool creation with user approval",
-      "CLI, Signal (E2E encrypted), and Telegram (official Bot API) communication",
+      "Proactive OS monitoring (file system, clipboard, calendar, active window)",
+      "Confidence scoring and decision explainability",
+      "Token budget management with automatic model routing",
+      "Privacy-first: opt-in monitoring, data export, topic-based purge",
+      "Industry protocols: AG-UI, MCP, A2A",
+      "CLI, Signal (E2E encrypted), and Telegram communication",
       "Self-hosted with no cloud dependency"
     ]
   }
@@ -71,13 +78,17 @@
   <!-- ── HERO ──────────────────────────────────────────────── -->
   <section class="hero">
     <div class="container">
-      <img src="logo.png" alt="Leontes — proactive AI agent for Windows, geometric lion logo" class="hero-logo" />
-      <h1 class="sr-only">Leontes — Open-Source Proactive AI Agent for Windows</h1>
+      <img src="logo.png" alt="Leontes — AI agent with cognitive architecture, geometric lion logo" class="hero-logo" />
+      <h1 class="sr-only">Leontes — AI Agent with a Cognitive Architecture</h1>
       <p class="hero-tagline">
-        An AI agent that lives in your OS,
+        An AI agent that <strong>thinks in stages</strong>,
         <strong>acts before you ask</strong>, and
         <strong>writes its own tools</strong>.
         Self-hosted. Open source. Windows.
+      </p>
+      <p class="hero-sub">
+        Not another chatbot wrapper. A neuroscience-inspired cognitive system
+        that perceives, remembers, plans, acts, and learns.
       </p>
       <div class="hero-actions">
         <a href="https://github.com/przemek-kulasek/leontes" class="btn btn-primary" target="_blank" rel="noopener">
@@ -90,46 +101,183 @@
     </div>
   </section>
 
+  <!-- ── HOW IT THINKS ──────────────────────────────────────── -->
+  <section>
+    <div class="container">
+      <p class="section-label">Cognitive architecture</p>
+      <h2 class="section-title">How Leontes thinks</h2>
+      <p class="section-sub">Most agents are a while-loop around a chat API. Leontes runs a 5-stage pipeline inspired by Global Workspace Theory and Kahneman's dual-process model.</p>
+
+      <div class="pipeline">
+        <div class="pipeline-stage">
+          <span class="pipeline-num">1</span>
+          <h3 class="pipeline-name">Perceive</h3>
+          <p class="pipeline-desc">Extract entities, classify intent, detect urgency. No LLM needed. Fast pattern matching only.</p>
+        </div>
+        <div class="pipeline-arrow">&rarr;</div>
+        <div class="pipeline-stage">
+          <span class="pipeline-num">2</span>
+          <h3 class="pipeline-name">Enrich</h3>
+          <p class="pipeline-desc">Search four memory types. Resolve "Sarah" to a real person via the knowledge graph.</p>
+        </div>
+        <div class="pipeline-arrow">&rarr;</div>
+        <div class="pipeline-stage">
+          <span class="pipeline-num">3</span>
+          <h3 class="pipeline-name">Plan</h3>
+          <p class="pipeline-desc">LLM picks tools and strategy. Can pause here to ask you a question, then resume.</p>
+        </div>
+        <div class="pipeline-arrow">&rarr;</div>
+        <div class="pipeline-stage">
+          <span class="pipeline-num">4</span>
+          <h3 class="pipeline-name">Execute</h3>
+          <p class="pipeline-desc">Stream the response. Call tools. If the server crashes, it picks up from the last checkpoint.</p>
+        </div>
+        <div class="pipeline-arrow">&rarr;</div>
+        <div class="pipeline-stage">
+          <span class="pipeline-num">5</span>
+          <h3 class="pipeline-name">Reflect</h3>
+          <p class="pipeline-desc">Store memories, update the knowledge graph, extract insights. The agent gets better with every conversation.</p>
+        </div>
+      </div>
+
+      <p class="pipeline-footnote">
+        Built on Microsoft Agent Framework Workflows. Each stage checkpoints its state. Every decision is traced. Ask "why did you do that?" and get a real answer.
+      </p>
+    </div>
+  </section>
+
+  <!-- ── DUAL PROCESS ──────────────────────────────────────── -->
+  <section>
+    <div class="container">
+      <p class="section-label">Dual-process intelligence</p>
+      <h2 class="section-title">Two brains, one agent</h2>
+      <p class="section-sub">Inspired by Kahneman's System 1 / System 2 model. Most OS events are handled by fast reflexes. The "conscious mind" only activates when something surprising happens.</p>
+
+      <div class="dual-grid">
+        <div class="feature-card">
+          <span class="feature-icon">⚡</span>
+          <h3 class="feature-name">System 1: Sentinel</h3>
+          <p class="feature-desc">Fast, local, free. Watches file downloads, clipboard, calendar, and active windows. Applies heuristic filters: regex, frequency analysis, time rules. No LLM calls. Handles most events by reflex.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🧠</span>
+          <h3 class="feature-name">System 2: Thinking Pipeline</h3>
+          <p class="feature-desc">Slow, deliberate, powerful. The full 5-stage cognitive pipeline. Only triggered when System 1 detects something it can't handle alone. Your agent notices when you copy an IBAN and asks if you want to find the matching invoice.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ── FEATURES ──────────────────────────────────────────── -->
   <section>
     <div class="container">
-      <p class="section-label">Core modules</p>
-      <h2 class="section-title">Five things it does that others don't</h2>
-      <p class="section-sub">Leontes is built around a set of modules that work together — not a collection of disconnected features bolted on top of an LLM.</p>
+      <p class="section-label">Capabilities</p>
+      <h2 class="section-title">What it can do</h2>
+      <p class="section-sub">Twelve modules that work together. Not features bolted on top of an LLM.</p>
 
       <div class="features-grid">
 
         <div class="feature-card">
-          <span class="feature-icon">👁</span>
-          <h3 class="feature-name">Sentinel</h3>
-          <p class="feature-desc">Watches your file system, clipboard, calendar, and active window. Triggers suggestions or actions without you asking. It notices before you do.</p>
+          <span class="feature-icon">🧬</span>
+          <h3 class="feature-name">Hierarchical Memory</h3>
+          <p class="feature-desc">Four memory types modeled on neuroscience: working (context), episodic (past events), semantic (knowledge graph), procedural (learned skills). All in PostgreSQL with pgvector.</p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">🔗</span>
+          <h3 class="feature-name">Synapse Graph</h3>
+          <p class="feature-desc">Knowledge graph linking people, files, and projects. "Send the report to Sarah" finds the right person, file, and channel. Graph-augmented retrieval, not flat vector search.</p>
         </div>
 
         <div class="feature-card">
           <span class="feature-icon">🪟</span>
           <h3 class="feature-name">Structural Vision</h3>
-          <p class="feature-desc">Reads application UI via Windows UI Automation — no screenshots, no pixel matching. Sees buttons and fields as structured code, not images.</p>
-        </div>
-
-        <div class="feature-card">
-          <span class="feature-icon">🧠</span>
-          <h3 class="feature-name">Synapse Graph</h3>
-          <p class="feature-desc">A knowledge graph linking people, files, and projects. Say "send the quarterly report to Sarah" and it finds the right person, file, and channel from your history.</p>
+          <p class="feature-desc">Reads application UI via Windows UI Automation. Sees buttons and text as structured code, not pixels. Privacy exclusions prevent reading password fields.</p>
         </div>
 
         <div class="feature-card">
           <span class="feature-icon">⚙️</span>
           <h3 class="feature-name">Tool Forge</h3>
-          <p class="feature-desc">When the agent hits a capability gap, it writes a new tool class, compiles it, runs a test, and asks you to approve. Nothing runs without your sign-off.</p>
+          <p class="feature-desc">The agent writes, compiles (Roslyn), tests, and registers new tools at runtime. You approve before anything runs. Unused tools are pruned automatically.</p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">💬</span>
+          <h3 class="feature-name">Proactive Communication</h3>
+          <p class="feature-desc">The agent can send notifications, ask mid-task questions, request permissions, and stream progress updates. Not just reactive chat.</p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">📊</span>
+          <h3 class="feature-name">Confidence Scoring</h3>
+          <p class="feature-desc">Every response has a confidence score (0 to 1). When the agent is unsure, it asks. When it's confident, it acts. Ask "why did you do that?" and see the full decision trace.</p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">🔒</span>
+          <h3 class="feature-name">Privacy First</h3>
+          <p class="feature-desc">All monitoring is opt-in. Review, export, or delete any stored data. "Forget Project X" cascades across every table. Sensitive data is never stored in plaintext.</p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">💰</span>
+          <h3 class="feature-name">Cost Aware</h3>
+          <p class="feature-desc">Token budgets per feature. Automatic model routing: small model for simple tasks, large for complex reasoning. Background tasks throttle first; your chat never silently blocks.</p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">🛡️</span>
+          <h3 class="feature-name">Resilient</h3>
+          <p class="feature-desc">Bounded queues with backpressure. Stage-level degradation. If the LLM is down, Sentinel heuristics, local tools, and memory retrieval still work.</p>
         </div>
 
         <div class="feature-card">
           <span class="feature-icon">📡</span>
-          <h3 class="feature-name">CLI + Signal + Telegram</h3>
-          <p class="feature-desc">Talk to it from your terminal or message it from your phone via Signal (E2E encrypted) or Telegram (official Bot API). Same context, same memory, same agent.</p>
+          <h3 class="feature-name">Multi-Channel</h3>
+          <p class="feature-desc">CLI, Signal (E2E encrypted), Telegram (Bot API). Same brain, same memory. Talk from your terminal or message from your phone.</p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">🌐</span>
+          <h3 class="feature-name">Open Protocols</h3>
+          <p class="feature-desc">AG-UI for web frontends (CopilotKit compatible). MCP to connect external tool servers. A2A for agent-to-agent delegation. All three industry standards.</p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">🔍</span>
+          <h3 class="feature-name">Observable</h3>
+          <p class="feature-desc">Every pipeline execution is traced: per-stage timing, decision records, token usage. You can replay any interaction and see exactly what the agent considered, chose, and why.</p>
         </div>
 
       </div>
+    </div>
+  </section>
+
+  <!-- ── ARCHITECTURE ─────────────────────────────────────── -->
+  <section>
+    <div class="container">
+      <p class="section-label">Under the hood</p>
+      <h2 class="section-title">Three hosts, one brain</h2>
+      <p class="section-sub">Built on .NET 10, PostgreSQL 17 + pgvector, and the Microsoft Agent Framework. Clean architecture with dependency flowing inward only.</p>
+
+      <div class="arch-grid">
+        <div class="feature-card">
+          <h3 class="feature-name">Leontes.Api</h3>
+          <p class="feature-desc">The brain. Thinking Pipeline, HTTP endpoints, SSE streaming, auto-migration, rate limiting. Handles chat from CLI, Signal, and Telegram.</p>
+        </div>
+        <div class="feature-card">
+          <h3 class="feature-name">Leontes.Worker</h3>
+          <p class="feature-desc">The senses. Windows Service running Sentinel monitors and messaging bridges. Watches your OS and forwards events to the brain.</p>
+        </div>
+        <div class="feature-card">
+          <h3 class="feature-name">Leontes.Cli</h3>
+          <p class="feature-desc">The voice. dotnet tool installed as <code>leontes</code>. Chat, setup wizard, privacy controls, budget dashboard, telemetry viewer.</p>
+        </div>
+      </div>
+
+      <p class="arch-footnote">
+        Inspired by: Global Workspace Theory (Dehaene), Dual-Process Theory (Kahneman), Generative Agents (Park et al.), Voyager (Wang et al.), Free Energy Principle (Friston).
+      </p>
     </div>
   </section>
 
@@ -140,19 +288,23 @@
         <span class="status-dot"></span>
         Early development
       </div>
-      <h2 class="section-title">MVP in progress</h2>
+      <h2 class="section-title">17 feature specs, fully designed</h2>
       <p class="status-desc">
-        Core modules are being built. No release yet — but the architecture is solid, the scope is locked, and the code is public. Star the repo to follow along.
+        Core infrastructure is implemented (CLI, auth, Signal, Telegram). The cognitive architecture is specified down to the interface level and ready for implementation.
       </p>
       <ul class="mvp-list">
+        <li>Cognitive Pipeline</li>
+        <li>Hierarchical Memory</li>
         <li>Sentinel</li>
         <li>Structural Vision</li>
-        <li>Synapse Graph</li>
         <li>Tool Forge</li>
-        <li>CLI</li>
-        <li>Signal integration</li>
-        <li>Telegram integration</li>
-        <li>Setup wizard</li>
+        <li>Proactive Comms</li>
+        <li>Observability</li>
+        <li>Privacy Controls</li>
+        <li>Cost Management</li>
+        <li>Error Recovery</li>
+        <li>AG-UI / MCP / A2A</li>
+        <li>CLI + Signal + Telegram</li>
       </ul>
       <a href="https://github.com/przemek-kulasek/leontes" class="btn btn-primary" target="_blank" rel="noopener">
         Follow progress on GitHub
