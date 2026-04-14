@@ -1,7 +1,8 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Leontes.Application.Signal;
+using Leontes.Application.Messaging;
+using Leontes.Domain.Enums;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -10,14 +11,16 @@ namespace Leontes.Infrastructure.Signal;
 public sealed class SignalRestClient(
     HttpClient httpClient,
     IOptions<SignalOptions> options,
-    ILogger<SignalRestClient> logger) : ISignalClient
+    ILogger<SignalRestClient> logger) : IMessagingClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    public async Task<IReadOnlyList<SignalIncomingMessage>> ReceiveMessagesAsync(CancellationToken cancellationToken)
+    public MessageChannel Channel => MessageChannel.Signal;
+
+    public async Task<IReadOnlyList<IncomingMessage>> ReceiveMessagesAsync(CancellationToken cancellationToken)
     {
         var phoneNumber = options.Value.PhoneNumber;
 
@@ -33,7 +36,7 @@ public sealed class SignalRestClient(
         var envelopes = await response.Content.ReadFromJsonAsync<List<SignalEnvelope>>(JsonOptions, cancellationToken)
             ?? [];
 
-        var messages = new List<SignalIncomingMessage>();
+        var messages = new List<IncomingMessage>();
 
         foreach (var envelope in envelopes)
         {
@@ -44,10 +47,11 @@ public sealed class SignalRestClient(
             if (string.IsNullOrEmpty(data.Source))
                 continue;
 
-            messages.Add(new SignalIncomingMessage(
+            messages.Add(new IncomingMessage(
                 Sender: data.Source,
                 Content: data.DataMessage.Message,
-                Timestamp: data.DataMessage.Timestamp));
+                Timestamp: data.DataMessage.Timestamp,
+                Channel: MessageChannel.Signal));
         }
 
         if (messages.Count > 0)

@@ -7,14 +7,14 @@ Leontes (AI assistant) runs locally but the API is completely unauthenticated. A
 ## Prerequisites
 
 - Working POC of API, Worker, and CLI
-- Signal and MCP are not yet implemented but will be added soon — auth design must accommodate them
+- Signal, Telegram, and MCP are not yet implemented but will be added soon — auth design must accommodate them
 
 ## Rules
 
 - Secure, industry-standard approach
 - Consistent with existing project patterns (User Secrets, extension methods, etc.)
 - No new third-party NuGet packages — use ASP.NET Core shared framework authentication
-- Single API key for all clients (CLI, Worker, future Signal/MCP)
+- Single API key for all clients (CLI, Worker, future Signal/Telegram/MCP)
 
 ## Solution
 
@@ -60,6 +60,7 @@ Client (CLI/Worker/MCP) → Authorization: Bearer lnt_xxx → API middleware →
 |---------|------|------|
 | CLI | CLI → HTTP → API | Bearer token from CLI User Secrets |
 | Signal | Phone → Signal → Worker → HTTP → API | Bearer token from Worker User Secrets |
+| Telegram | Phone → Telegram → Worker → HTTP → API | Bearer token from Worker User Secrets |
 | MCP | MCP client → HTTP/SSE → API | Bearer token (same key) |
 
 All channels funnel through the API via HTTP. The auth layer validates the Bearer token regardless of the originating channel.

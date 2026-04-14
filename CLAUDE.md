@@ -46,7 +46,7 @@ Keep `README.md` up to date when adding or removing features, dependencies, or s
 
 ```
 /backend/src/Leontes.Api             — .NET 10 Minimal API host + Processing Loop (IHostedService)
-/backend/src/Leontes.Worker          — .NET 10 Windows Service (Sentinel + Signal bridge)
+/backend/src/Leontes.Worker          — .NET 10 Windows Service (Sentinel + Signal/Telegram bridges)
 /backend/src/Leontes.Cli             — .NET 10 console app / dotnet tool (installed as `leontes`)
 /backend/src/Leontes.Application     — Service interfaces, DTOs, feature contracts
 /backend/src/Leontes.Domain          — Core entities, value objects, domain exceptions (zero dependencies)
@@ -59,8 +59,8 @@ Keep `README.md` up to date when adding or removing features, dependencies, or s
 
 Three executable projects, two always-running hosts + one CLI tool:
 
-1. **Leontes.Api** — HTTP endpoints + Processing Loop (`IHostedService`). The brain. Handles chat requests from CLI (via HTTP) and from Signal (forwarded by Worker). Runs the LLM, tools, Synapse Graph queries. Includes rate limiting, CORS, auto-migration on startup.
-2. **Leontes.Worker** — Windows Service (`UseWindowsService()`) running Sentinel + Signal bridge. Always on. Forwards Signal messages to the API. Sends notifications when Sentinel triggers.
+1. **Leontes.Api** — HTTP endpoints + Processing Loop (`IHostedService`). The brain. Handles chat requests from CLI (via HTTP) and from Signal/Telegram (forwarded by Worker). Runs the LLM, tools, Synapse Graph queries. Includes rate limiting, CORS, auto-migration on startup.
+2. **Leontes.Worker** — Windows Service (`UseWindowsService()`) running Sentinel + messaging bridges (Signal, Telegram). Always on. Forwards Signal/Telegram messages to the API. Sends notifications when Sentinel triggers.
 3. **Leontes.Cli** — dotnet tool installed globally as `leontes`. Commands: `leontes init` (setup wizard), `leontes chat` (interactive chat), `leontes` (default: chat). Communicates with the API via HTTP.
 
 ### Clean Architecture Layers
@@ -71,15 +71,15 @@ Dependency flows inward only. Api, Worker, and Cli are outer-layer hosts — the
 2. **Application** — Service interfaces, DTOs (records), IApplicationDbContext, PagedRequest/PagedResponse. References Domain only.
 3. **Infrastructure** — EF Core DbContext, ApplicationDbContextInitializer (auto-migration + seeding), external API clients, HttpClientFactory with resilience. References Application + Domain.
 4. **Api** (outermost) — Minimal API endpoints in Endpoints/ folder, global exception handler, extensions for health checks/logging/CORS/rate limiting. DI wiring via AddApplication() / AddInfrastructure(). Auto-migrates database on startup.
-5. **Worker** (outermost) — Windows Service hosting Sentinel background services and Signal bridge. DI wiring via AddApplication() / AddInfrastructure().
+5. **Worker** (outermost) — Windows Service hosting Sentinel background services and messaging bridges (Signal, Telegram). DI wiring via AddApplication() / AddInfrastructure().
 6. **Cli** (outermost) — Standalone console app, no project references to backend layers. Communicates with Api via HTTP only.
 
 ### Communication
 
-- Two channels: CLI (terminal) and Signal (E2E encrypted mobile), both feeding into one async processing loop hosted in the Api
-- CLI communicates with Api via HTTP; Signal messages are received by Worker and forwarded to Api
-- Data flow: CLI/Signal → Queue → Processing Loop → Synapse Graph → LLM + Tools → Response → Original Channel
-- Sentinel triggers: OS Events → Pattern Match → AI Layer (if needed) → CLI/Signal notification
+- Three channels: CLI (terminal), Signal (E2E encrypted mobile), and Telegram (official Bot API), all feeding into one async processing loop hosted in the Api via a shared `IMessagingClient` abstraction
+- CLI communicates with Api via HTTP; Signal and Telegram messages are received by Worker and forwarded to Api
+- Data flow: CLI/Signal/Telegram → Queue → Processing Loop → Synapse Graph → LLM + Tools → Response → Original Channel
+- Sentinel triggers: OS Events → Pattern Match → AI Layer (if needed) → CLI/Signal/Telegram notification
 - SSE for streaming responses from backend to CLI client
 - SSE: backend streams via IAsyncEnumerable or Response.WriteAsync with `text/event-stream`. Named event types with JSON payload (`event: <type>\ndata: <json>\n\n`). Terminal event (done/error) required.
 - Stream interruption: track IsComplete flag on assistant messages. On interruption with no content: delete the empty message and metadata. On interruption with partial content: preserve with `IsComplete = false`. Exclude incomplete assistant messages from future AI context.
@@ -113,6 +113,7 @@ Global ExceptionHandler (ExceptionHandler.cs implementing IExceptionHandler) ret
 - Single-user, local deployment
 - API key or JWT for CLI communication with backend
 - Signal: bot registration during `leontes init`
+- Telegram: bot token from @BotFather, configured during `leontes init`
 - JWT secret auto-generated by setup wizard, stored in .NET User Secrets
 
 ### AI / Agents
@@ -128,7 +129,7 @@ Global ExceptionHandler (ExceptionHandler.cs implementing IExceptionHandler) ret
 - Monitors OS events: file system watcher, clipboard, calendar, active window
 - Defines interfaces for each input source: IFileSystemWatcher, IClipboardMonitor, ICalendarMonitor, IActiveWindowMonitor
 - Pattern rules trigger suggestions or autonomous actions
-- Delivered via CLI or Signal notification
+- Delivered via CLI, Signal, or Telegram notification
 
 ### Structural Vision
 
@@ -145,7 +146,7 @@ Global ExceptionHandler (ExceptionHandler.cs implementing IExceptionHandler) ret
 ### Setup Wizard
 
 - Implemented as `leontes init` command in Leontes.Cli
-- Steps: PostgreSQL via Docker Compose → AI provider + API key → Signal bot registration → Sentinel defaults → auth secret generation
+- Steps: PostgreSQL via Docker Compose → AI provider + API key → Signal bot registration → Telegram bot setup → Sentinel defaults → auth secret generation
 - All secrets stored in .NET User Secrets
 
 ### Local Dev

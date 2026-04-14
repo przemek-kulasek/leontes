@@ -5,7 +5,7 @@
 Three executable projects running on the user's PC, sharing one AI engine and one knowledge graph:
 
 1. **Leontes.Api** — HTTP endpoints + Processing Loop (`IHostedService`). The brain. Handles chat requests, runs the LLM, manages the Synapse Graph. Includes rate limiting, CORS, auto-migration on startup.
-2. **Leontes.Worker** — Windows Service running the Proactive Layer. Sentinel monitors OS events, Signal bridge receives mobile messages and forwards them to the API.
+2. **Leontes.Worker** — Windows Service running the Proactive Layer. Sentinel monitors OS events, messaging bridges (Signal, Telegram) receive mobile messages and forward them to the API.
 3. **Leontes.Cli** — dotnet tool (`leontes`). The user interface. Setup wizard (`leontes init`), interactive chat, and future commands.
 
 ## Components
@@ -16,6 +16,7 @@ Three executable projects running on the user's PC, sharing one AI engine and on
 | Processing Loop | Leontes.Api | IHostedService | Message intake → context → LLM → response |
 | Sentinel | Leontes.Worker | Windows Service | FS watcher, clipboard, calendar, active window → pattern match → trigger |
 | Signal Bridge | Leontes.Worker | Windows Service | Receives Signal messages, forwards to API |
+| Telegram Bridge | Leontes.Worker | Windows Service | Receives Telegram messages, forwards to API |
 | Structural Vision | Leontes.Worker | Windows UI Automation | Read/interact with application UI as element tree |
 | CLI | Leontes.Cli | dotnet tool | PC interaction — chat, setup wizard |
 | Knowledge Graph | Shared (Infrastructure) | PostgreSQL 17 + pgvector | Entities, relationships, semantic search, tool usage tracking |
@@ -36,7 +37,8 @@ Channels:
                                        → LLM + Tools
                                        → SSE Response → CLI
 
-  Signal → Worker → HTTP → Api → Processing Loop → Response → Worker → Signal
+  Signal   → Worker → HTTP → Api → Processing Loop → Response → Worker → Signal
+  Telegram → Worker → HTTP → Api → Processing Loop → Response → Worker → Telegram
 
 Tool Forge:
   Gap detected → Generate tool class → Compile + test → User approval → Register
@@ -48,6 +50,7 @@ Tool Forge:
 1. PostgreSQL via Docker Compose (or existing connection string)
 2. AI provider + model + API key → .NET User Secrets
 3. Signal bot registration (guided steps)
+3b. Telegram bot setup (BotFather token + chat ID)
 4. Sentinel defaults (watch folders, enabled inputs)
 5. JWT secret + API key auto-generated
 
@@ -66,6 +69,7 @@ Single-user. API key or JWT for CLI ↔ Api. Signal via bot registration.
 | PostgreSQL for graph + vectors | One database for entities, relationships, pgvector search |
 | Windows UI Automation over screenshots | Structural, fast, cheap — no vision API calls |
 | Signal for mobile | E2E encrypted, no custom mobile app needed |
+| Telegram for mobile | Official Bot API, no SIM card needed, easier setup |
 | Tool Forge with user approval | Self-extending but safe — no unreviewed code runs |
 | CLI wizard over web setup | Runs once, no UI to build or maintain |
 | No sandbox for MVP | User confirms before execution; Vault deferred |

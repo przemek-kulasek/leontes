@@ -20,7 +20,7 @@ public sealed class ChatService(
     {
         if (!Enum.TryParse<MessageChannel>(request.Channel, ignoreCase: true, out var channel))
         {
-            throw new Domain.Exceptions.ValidationException("Invalid channel. Supported values: Cli, Signal.");
+            throw new Domain.Exceptions.ValidationException("Invalid channel. Supported values: Cli, Signal, Telegram.");
         }
 
         var conversation = await _db.Conversations

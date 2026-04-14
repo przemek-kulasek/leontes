@@ -1,6 +1,8 @@
 using System.Text.Json;
-using Leontes.Application.Signal;
+using Leontes.Application.Messaging;
+using Leontes.Domain.Enums;
 using Leontes.Infrastructure.Signal;
+using Leontes.Worker.Messaging;
 using Microsoft.Extensions.Options;
 
 namespace Leontes.Worker.Signal;
@@ -8,10 +10,15 @@ namespace Leontes.Worker.Signal;
 public sealed class SignalBridgeService(
     ILogger<SignalBridgeService> logger,
     IConfiguration configuration,
-    ISignalClient signalClient,
+    IEnumerable<IMessagingClient> messagingClients,
     IHttpClientFactory httpClientFactory,
     IOptions<SignalOptions> signalOptions) : BackgroundService
 {
+    private const int MaxSignalMessageLength = 2000;
+
+    private readonly IMessagingClient _signalClient = messagingClients
+        .Single(c => c.Channel == MessageChannel.Signal);
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var apiKey = configuration["Authentication:ApiKey"];
@@ -41,7 +48,7 @@ public sealed class SignalBridgeService(
         {
             try
             {
-                var messages = await signalClient.ReceiveMessagesAsync(stoppingToken);
+                var messages = await _signalClient.ReceiveMessagesAsync(stoppingToken);
 
                 foreach (var message in messages)
                 {
@@ -76,7 +83,7 @@ public sealed class SignalBridgeService(
 
         while (!cancellationToken.IsCancellationRequested)
         {
-            if (await signalClient.IsAvailableAsync(cancellationToken))
+            if (await _signalClient.IsAvailableAsync(cancellationToken))
             {
                 logger.LogInformation("Signal REST API is available");
                 return;
@@ -88,7 +95,7 @@ public sealed class SignalBridgeService(
         }
     }
 
-    private async Task ProcessMessageAsync(SignalIncomingMessage message, string apiKey, CancellationToken cancellationToken)
+    private async Task ProcessMessageAsync(IncomingMessage message, string apiKey, CancellationToken cancellationToken)
     {
         logger.LogInformation("Processing Signal message from {Sender}", message.Sender);
 
@@ -102,10 +109,10 @@ public sealed class SignalBridgeService(
                 return;
             }
 
-            var chunks = SignalMessageHelper.SplitMessage(responseText);
+            var chunks = MessageSplitter.Split(responseText, MaxSignalMessageLength);
             foreach (var chunk in chunks)
             {
-                await signalClient.SendMessageAsync(message.Sender, chunk, cancellationToken);
+                await _signalClient.SendMessageAsync(message.Sender, chunk, cancellationToken);
 
                 if (chunks.Count > 1)
                     await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
@@ -117,7 +124,7 @@ public sealed class SignalBridgeService(
 
             try
             {
-                await signalClient.SendMessageAsync(
+                await _signalClient.SendMessageAsync(
                     message.Sender,
                     "I'm having trouble processing your message. Please try again.",
                     cancellationToken);
@@ -142,7 +149,7 @@ public sealed class SignalBridgeService(
         using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         response.EnsureSuccessStatusCode();
 
-        return await SignalMessageHelper.ReadSseResponseAsync(response, cancellationToken);
+        return await SseResponseReader.ReadSseResponseAsync(response, cancellationToken);
     }
 
     private static bool IsAllowedSender(string sender, List<string> allowedSenders)
