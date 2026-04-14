@@ -87,11 +87,16 @@ public static class DependencyInjection
     {
         services.Configure<TelegramOptions>(configuration.GetSection(TelegramOptions.SectionName));
 
+        var pollTimeout = configuration.GetValue($"{TelegramOptions.SectionName}:PollTimeoutSeconds", 30);
+
+        // No AddStandardResilienceHandler — Telegram long-polling holds the connection open
+        // for up to PollTimeoutSeconds (default 30s), which conflicts with the standard 10s
+        // attempt timeout. The bridge service handles errors and retries at the application level.
         services.AddHttpClient<TelegramBotClient>(client =>
         {
             client.BaseAddress = new Uri("https://api.telegram.org");
-        })
-        .AddStandardResilienceHandler();
+            client.Timeout = TimeSpan.FromSeconds(pollTimeout + 10);
+        });
 
         services.AddSingleton<IMessagingClient>(sp => sp.GetRequiredService<TelegramBotClient>());
     }
