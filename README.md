@@ -10,7 +10,7 @@
 
 Leontes is a self-hosted, proactive AI agent for Windows. It monitors your system events, understands application UI structurally, remembers context across conversations through a knowledge graph, and — when it encounters something it can't do — writes a new tool, tests it, and asks you to approve it.
 
-Talk to it from your terminal. Message it from your phone via Signal. Or don't talk to it at all — it'll notice when you need help.
+Talk to it from your terminal. Message it from your phone via Signal or Telegram. Or don't talk to it at all — it'll notice when you need help.
 
 ## What makes this different
 
@@ -20,7 +20,7 @@ Talk to it from your terminal. Message it from your phone via Signal. Or don't t
 | **Structural Vision** | Reads application UI via Windows UI Automation — no screenshots, no pixel matching. Sees buttons and text as code. |
 | **Synapse Graph** | Knowledge graph linking people, files, and projects. "Send this to the lead dev" just works. |
 | **Tool Forge** | The agent writes, compiles, tests, and registers new tools at runtime. You approve before anything runs. |
-| **CLI + Signal** | Talk to it from your PC or message it from your phone. Same context, same memory. |
+| **CLI + Signal + Telegram** | Talk to it from your PC or message it from your phone via Signal (E2E encrypted) or Telegram (official Bot API). Same context, same memory. |
 
 ## Architecture
 
@@ -29,7 +29,7 @@ Three executable projects sharing one AI engine and one knowledge graph:
 | Component | Project | Responsibility |
 |-----------|---------|----------------|
 | **Backend API** | `Leontes.Api` | HTTP endpoints, Processing Loop, SSE streaming, auto-migration, rate limiting |
-| **Worker** | `Leontes.Worker` | Windows Service: Sentinel (OS monitoring) + Signal bridge |
+| **Worker** | `Leontes.Worker` | Windows Service: Sentinel (OS monitoring) + Signal bridge + Telegram bridge |
 | **CLI** | `Leontes.Cli` | dotnet tool (`leontes`): chat, setup wizard, user commands |
 
 ```
@@ -39,7 +39,7 @@ Sentinel (FS / Clipboard / Calendar / Window)  [Worker]
 Structural Vision (Windows UI Automation)
   --> Element Tree --> AI reads and interacts via accessibility API
 
-CLI / Signal --> Processing Loop --> Synapse Graph --> LLM + Tools --> Response  [Api]
+CLI / Signal / Telegram --> Processing Loop --> Synapse Graph --> LLM + Tools --> Response  [Api]
 ```
 
 **Stack:** .NET 10 Minimal API, PostgreSQL 17 + pgvector, Microsoft.Agents.AI, Windows UI Automation.
@@ -219,6 +219,81 @@ All Signal settings are stored in Worker user secrets. Nothing goes in `appsetti
 | Worker logs "ApiKey not configured" | Run `leontes init` to generate and set the API key |
 | Port 8081 already in use | Change the port mapping in `docker-compose.yml` and update `Signal:BaseUrl` in Worker user secrets |
 
+### Telegram setup (optional)
+
+Telegram lets you message Leontes from your phone via the official [Telegram Bot API](https://core.telegram.org/bots/api). No SIM card, no Docker container — just an HTTPS bot token.
+
+**Telegram is entirely optional.** If you skip this section, the bridge logs "Telegram bridge is disabled" and does nothing else.
+
+#### Disabling Telegram
+
+If you previously set up Telegram and want to turn it off:
+
+```bash
+# Remove the bot token from Worker secrets (this disables the bridge)
+dotnet user-secrets remove "Telegram:BotToken" --project backend/src/Leontes.Worker
+```
+
+The Worker will still start normally — Sentinel and Signal keep running, only the Telegram bridge is skipped.
+
+#### 1. Create a Telegram bot
+
+1. Open Telegram and search for **@BotFather**
+2. Send `/newbot` and follow the prompts (choose a name and username)
+3. BotFather will reply with a **bot token** — copy it
+
+#### 2. Configure Leontes Worker
+
+```bash
+# Set the bot token (this enables the Telegram bridge)
+dotnet user-secrets set "Telegram:BotToken" "YOUR_BOT_TOKEN" \
+  --project backend/src/Leontes.Worker
+```
+
+#### 3. Find your Telegram chat ID
+
+Send any message to your bot in Telegram, then run:
+
+```bash
+curl https://api.telegram.org/botYOUR_BOT_TOKEN/getUpdates
+```
+
+Look for `"chat": { "id": 12345678 }` in the response. That number is your chat ID.
+
+```bash
+# Allow your Telegram account to message Leontes
+dotnet user-secrets set "Telegram:AllowedChatIds:0" "YOUR_CHAT_ID" \
+  --project backend/src/Leontes.Worker
+```
+
+#### 4. Start the Worker
+
+```bash
+dotnet run --project backend/src/Leontes.Worker --configuration Release
+```
+
+The Worker will connect to the Telegram Bot API and start long-polling for messages. Send a message to your bot — Leontes will respond.
+
+#### Telegram configuration reference
+
+All Telegram settings are stored in Worker user secrets. Nothing goes in `appsettings.json`.
+
+| Setting | Required | Default | Description |
+|---------|----------|---------|-------------|
+| `Telegram:BotToken` | Yes (to enable) | — | The bot token from @BotFather. If empty or missing, the bridge is disabled. |
+| `Telegram:AllowedChatIds:0` | No | (allow none) | Telegram chat IDs allowed to message Leontes. If empty, all messages are rejected. Add more with `:1`, `:2`, etc. |
+| `Telegram:PollTimeoutSeconds` | No | `30` | Long-poll timeout in seconds. 30 is Telegram's recommended maximum. |
+| `Authentication:ApiKey` | Yes (to enable) | — | API key for forwarding messages to the backend. Set by `leontes init`. |
+
+#### Telegram troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| Worker logs "Telegram bridge is disabled" | Set `Telegram:BotToken` in Worker user secrets — see step 2 |
+| Worker logs "Telegram bot token is invalid" | Verify the token with `curl https://api.telegram.org/botYOUR_TOKEN/getMe` |
+| Messages ignored silently | Chat ID not in `AllowedChatIds` — check Worker logs for "unknown chat" warning |
+| Worker logs "ApiKey not configured" | Run `leontes init` to generate and set the API key |
+
 > **Note:** All `dotnet run` / `dotnet build` commands use `--configuration Release` because Windows Application Control (WDAC) blocks unsigned Debug-built DLLs. The CLI is installed as a global dotnet tool (see First-time setup) and is not affected.
 
 > **Note:** Ollama must be running before you start the API. If you installed Ollama normally it runs in the background automatically. If not, start it with `ollama serve`.
@@ -252,7 +327,7 @@ GitHub Actions: restore, build, test on push to `main`, `develop`, `feature/*`. 
 
 ## Status
 
-Early development. MVP scope: Sentinel (file system, clipboard, calendar, active window), Structural Vision, Synapse Graph, Tool Forge (autonomous with user approval), CLI + Signal.
+Early development. MVP scope: Sentinel (file system, clipboard, calendar, active window), Structural Vision, Synapse Graph, Tool Forge (autonomous with user approval), CLI + Signal + Telegram.
 
 ## License
 

@@ -2,6 +2,7 @@ using Leontes.Application;
 using Leontes.Infrastructure;
 using Leontes.Worker.Sentinel;
 using Leontes.Worker.Signal;
+using Leontes.Worker.Telegram;
 using Serilog;
 
 var builder = Host.CreateApplicationBuilder(args);
@@ -28,6 +29,7 @@ builder.Services.AddHttpClient("LeontesApi", client =>
 
 builder.Services.AddHostedService<SentinelService>();
 builder.Services.AddHostedService<SignalBridgeService>();
+builder.Services.AddHostedService<TelegramBridgeService>();
 
 var host = builder.Build();
 host.Run();

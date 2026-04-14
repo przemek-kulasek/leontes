@@ -1,11 +1,12 @@
 using Leontes.Application;
 using Leontes.Application.Chat;
-using Leontes.Application.Signal;
+using Leontes.Application.Messaging;
 using Leontes.Infrastructure.AI;
 using Leontes.Infrastructure.AI.Tools;
 using Leontes.Infrastructure.Data;
 using Leontes.Infrastructure.Data.Interceptors;
 using Leontes.Infrastructure.Signal;
+using Leontes.Infrastructure.Telegram;
 using Microsoft.Agents.AI;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
@@ -39,6 +40,7 @@ public static class DependencyInjection
 
         AddAiServices(services, configuration);
         AddSignalServices(services, configuration);
+        AddTelegramServices(services, configuration);
 
         return services;
     }
@@ -71,11 +73,26 @@ public static class DependencyInjection
     {
         services.Configure<SignalOptions>(configuration.GetSection(SignalOptions.SectionName));
 
-        services.AddHttpClient<ISignalClient, SignalRestClient>(client =>
+        services.AddHttpClient<SignalRestClient>(client =>
         {
             var baseUrl = configuration[$"{SignalOptions.SectionName}:BaseUrl"] ?? "http://localhost:8081";
             client.BaseAddress = new Uri(baseUrl);
         })
         .AddStandardResilienceHandler();
+
+        services.AddSingleton<IMessagingClient>(sp => sp.GetRequiredService<SignalRestClient>());
+    }
+
+    private static void AddTelegramServices(IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<TelegramOptions>(configuration.GetSection(TelegramOptions.SectionName));
+
+        services.AddHttpClient<TelegramBotClient>(client =>
+        {
+            client.BaseAddress = new Uri("https://api.telegram.org");
+        })
+        .AddStandardResilienceHandler();
+
+        services.AddSingleton<IMessagingClient>(sp => sp.GetRequiredService<TelegramBotClient>());
     }
 }

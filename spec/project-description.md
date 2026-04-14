@@ -2,7 +2,7 @@
 
 ## Vision
 
-Leontes is a **Proactive OS Partner**. It integrates into Windows as an ambient layer that monitors system events, understands application UI structurally, builds a knowledge graph of people/files/projects, and extends its own capabilities by writing new tools. Reachable via CLI (PC) and Signal (mobile).
+Leontes is a **Proactive OS Partner**. It integrates into Windows as an ambient layer that monitors system events, understands application UI structurally, builds a knowledge graph of people/files/projects, and extends its own capabilities by writing new tools. Reachable via CLI (PC), Signal (mobile, E2E encrypted), and Telegram (mobile, official Bot API).
 
 ## Core Problem
 
@@ -21,15 +21,16 @@ Knowledge graph (PostgreSQL + pgvector) linking People, Files, and Projects. Res
 
 ### M4: Channels
 - **CLI** — terminal on the host machine.
-- **Signal** — E2E encrypted, primary mobile channel.
+- **Signal** — E2E encrypted, primary mobile channel. Requires a dedicated SIM card and signal-cli-rest-api Docker container.
+- **Telegram** — official Bot API over HTTPS, no SIM card or extra containers needed. Transport-encrypted (TLS + MTProto), not E2E encrypted.
 
-Both feed into one async processing loop sharing the Synapse Graph.
+All channels share a common `IMessagingClient` abstraction and feed into one async processing loop sharing the Synapse Graph.
 
 ### M5: Tool Forge (Self-Extending Agent)
 The agent writes, tests, and registers new tools at runtime. Flow: user asks for something with no matching tool (or agent detects a repeated pattern) → agent generates a tool class → compiles and runs a test → user approves → tool registered in the catalog. Usage tracked in Synapse Graph; unused tools pruned automatically.
 
 ### M6: Setup Wizard
-Interactive CLI (`leontes init`) for first-run configuration: spins up PostgreSQL via Docker Compose, configures AI provider + API keys (stored in .NET User Secrets), walks through Signal bot registration, sets Sentinel watch folders, generates auth secrets.
+Interactive CLI (`leontes init`) for first-run configuration: spins up PostgreSQL via Docker Compose, configures AI provider + API keys (stored in .NET User Secrets), walks through Signal bot registration and Telegram bot setup, sets Sentinel watch folders, generates auth secrets.
 
 ## Post-MVP
 
@@ -46,6 +47,6 @@ Source code is fully public. AGPL enforces this split: commercial users who don'
 
 ## Scope Boundaries
 
-- **MVP:** Sentinel (all 4 inputs: file system, clipboard, calendar, active window), Structural Vision, Synapse Graph, CLI + Signal, Tool Forge (autonomous — agent-initiated with user approval), Setup Wizard.
+- **MVP:** Sentinel (all 4 inputs: file system, clipboard, calendar, active window), Structural Vision, Synapse Graph, CLI + Signal + Telegram, Tool Forge (autonomous — agent-initiated with user approval), Setup Wizard.
 - **Post-MVP:** Ghost Overlay, voice, web dashboard, Vault (sandboxed execution).
 - **Out of scope:** Multi-user, macOS/Linux Structural Vision.

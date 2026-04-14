@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using Leontes.Domain.Enums;
 using Leontes.Infrastructure.Signal;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
