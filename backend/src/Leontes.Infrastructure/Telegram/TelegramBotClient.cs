@@ -44,8 +44,15 @@ public sealed class TelegramBotClient(
         {
             _offset = update.UpdateId + 1;
 
-            if (update.Message?.Text is null)
+            if (update.Message?.Text is null || update.Message.Chat is null)
                 continue;
+
+            if (update.Message.Chat.Type != "private")
+            {
+                logger.LogDebug("Skipped non-private Telegram chat {ChatId} (type: {ChatType})",
+                    update.Message.Chat.Id, update.Message.Chat.Type);
+                continue;
+            }
 
             var chatId = update.Message.Chat.Id.ToString();
 
@@ -80,17 +87,20 @@ public sealed class TelegramBotClient(
 
     public async Task<bool> IsAvailableAsync(CancellationToken cancellationToken)
     {
-        try
+        var token = options.Value.BotToken;
+        var response = await httpClient.GetAsync($"/bot{token}/getMe", cancellationToken);
+
+        if (response.IsSuccessStatusCode)
+            return true;
+
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
         {
-            var token = options.Value.BotToken;
-            var response = await httpClient.GetAsync($"/bot{token}/getMe", cancellationToken);
-            return response.IsSuccessStatusCode;
-        }
-        catch (Exception ex)
-        {
-            logger.LogDebug(ex, "Telegram Bot API availability check failed");
+            logger.LogError("Telegram bot token is invalid (401 Unauthorized)");
             return false;
         }
+
+        logger.LogWarning("Telegram API returned {StatusCode} during availability check", (int)response.StatusCode);
+        throw new HttpRequestException($"Telegram API returned {(int)response.StatusCode} during availability check");
     }
 
     public async Task DeleteWebhookAsync(CancellationToken cancellationToken)
@@ -110,7 +120,7 @@ public sealed class TelegramBotClient(
 
         if (response.StatusCode == HttpStatusCode.TooManyRequests)
         {
-            var retryAfter = 0;
+            var retryAfter = 5;
             try
             {
                 using var doc = JsonDocument.Parse(body);
@@ -122,10 +132,11 @@ public sealed class TelegramBotClient(
             }
             catch (JsonException)
             {
-                // Ignore parse failure
+                // Ignore parse failure, use default
             }
 
             logger.LogWarning("Telegram rate limited on {Method}, retry after {RetryAfter}s", method, retryAfter);
+            throw new TelegramRateLimitedException(retryAfter, method);
         }
 
         logger.LogError("Telegram {Method} failed with {StatusCode}: {Body}", method, (int)response.StatusCode, body);
@@ -156,7 +167,7 @@ public sealed class TelegramBotClient(
         public long MessageId { get; set; }
 
         [JsonPropertyName("chat")]
-        public TelegramChat Chat { get; set; } = null!;
+        public TelegramChat? Chat { get; set; }
 
         [JsonPropertyName("date")]
         public long Date { get; set; }

@@ -206,14 +206,22 @@ public sealed class TelegramBotClientTests
     }
 
     [Fact]
-    public async Task IsAvailableAsync_WhenNetworkError_ReturnsFalse()
+    public async Task IsAvailableAsync_WhenNetworkError_ThrowsHttpRequestException()
     {
         var handler = new FakeHttpMessageHandler(new HttpRequestException("Connection refused"));
         var client = CreateClient(handler);
 
-        var result = await client.IsAvailableAsync(CancellationToken.None);
+        await Assert.ThrowsAsync<HttpRequestException>(() =>
+            client.IsAvailableAsync(CancellationToken.None));
+    }
 
-        Assert.False(result);
+    [Fact]
+    public async Task IsAvailableAsync_WhenServerError_ThrowsHttpRequestException()
+    {
+        var client = CreateClient(HttpStatusCode.InternalServerError, """{"ok":false}""");
+
+        await Assert.ThrowsAsync<HttpRequestException>(() =>
+            client.IsAvailableAsync(CancellationToken.None));
     }
 
     [Fact]
@@ -244,6 +252,72 @@ public sealed class TelegramBotClientTests
         var messages = await client.ReceiveMessagesAsync(CancellationToken.None);
 
         Assert.Empty(messages);
+    }
+
+    [Fact]
+    public async Task ReceiveMessagesAsync_WithGroupChat_SkipsUpdate()
+    {
+        var responseJson = """
+        {
+            "ok": true,
+            "result": [
+                {
+                    "update_id": 100,
+                    "message": {
+                        "message_id": 1,
+                        "chat": { "id": 67890, "type": "group" },
+                        "date": 1234567890,
+                        "text": "Hello from group"
+                    }
+                }
+            ]
+        }
+        """;
+
+        var client = CreateClient(HttpStatusCode.OK, responseJson);
+
+        var messages = await client.ReceiveMessagesAsync(CancellationToken.None);
+
+        Assert.Empty(messages);
+    }
+
+    [Fact]
+    public async Task ReceiveMessagesAsync_WithNullChat_SkipsUpdate()
+    {
+        var responseJson = """
+        {
+            "ok": true,
+            "result": [
+                {
+                    "update_id": 100,
+                    "message": {
+                        "message_id": 1,
+                        "date": 1234567890,
+                        "text": "No chat object"
+                    }
+                }
+            ]
+        }
+        """;
+
+        var client = CreateClient(HttpStatusCode.OK, responseJson);
+
+        var messages = await client.ReceiveMessagesAsync(CancellationToken.None);
+
+        Assert.Empty(messages);
+    }
+
+    [Fact]
+    public async Task ReceiveMessagesAsync_RateLimited_ThrowsTelegramRateLimitedException()
+    {
+        var responseJson = """{"ok":false,"description":"Too Many Requests","parameters":{"retry_after":30}}""";
+
+        var client = CreateClient(HttpStatusCode.TooManyRequests, responseJson);
+
+        var ex = await Assert.ThrowsAsync<TelegramRateLimitedException>(() =>
+            client.ReceiveMessagesAsync(CancellationToken.None));
+
+        Assert.Equal(30, ex.RetryAfterSeconds);
     }
 
     private static TelegramBotClient CreateClient(HttpStatusCode statusCode, string responseBody)

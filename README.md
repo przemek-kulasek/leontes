@@ -276,7 +276,7 @@ The Worker will connect to the Telegram Bot API and start long-polling for messa
 
 #### Telegram configuration reference
 
-All Telegram settings are stored in Worker user secrets. Nothing goes in `appsettings.json`.
+All Telegram secrets are stored in Worker user secrets. Non-secret defaults, such as `Telegram:PollTimeoutSeconds`, may live in `appsettings.json`.
 
 | Setting | Required | Default | Description |
 |---------|----------|---------|-------------|

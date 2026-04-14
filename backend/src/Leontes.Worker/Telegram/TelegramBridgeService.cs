@@ -12,10 +12,10 @@ public sealed class TelegramBridgeService(
     IConfiguration configuration,
     IEnumerable<IMessagingClient> messagingClients,
     IHttpClientFactory httpClientFactory,
-    TelegramBotClient telegramBotClient,
     IOptions<TelegramOptions> telegramOptions) : BackgroundService
 {
     private const int MaxTelegramMessageLength = 4096;
+    private const int MaxStartupRetries = 5;
 
     private readonly IMessagingClient _telegramClient = messagingClients
         .Single(c => c.Channel == MessageChannel.Telegram);
@@ -41,20 +41,23 @@ public sealed class TelegramBridgeService(
         if (options.AllowedChatIds.Count == 0)
             logger.LogWarning("Telegram:AllowedChatIds is empty — all incoming messages will be rejected until at least one chat ID is configured");
 
-        if (!await _telegramClient.IsAvailableAsync(stoppingToken))
-        {
-            logger.LogError("Telegram bot token is invalid or Telegram API is unreachable — Telegram bridge is disabled");
+        if (!await WaitForAvailabilityAsync(stoppingToken))
             return;
-        }
 
         logger.LogInformation("Telegram bridge service starting — long-polling with {Timeout}s timeout", options.PollTimeoutSeconds);
 
-        await telegramBotClient.DeleteWebhookAsync(stoppingToken);
+        var webhookDeleted = false;
 
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
+                if (!webhookDeleted)
+                {
+                    await ((TelegramBotClient)_telegramClient).DeleteWebhookAsync(stoppingToken);
+                    webhookDeleted = true;
+                }
+
                 var messages = await _telegramClient.ReceiveMessagesAsync(stoppingToken);
 
                 foreach (var message in messages)
@@ -72,6 +75,11 @@ public sealed class TelegramBridgeService(
             {
                 break;
             }
+            catch (TelegramRateLimitedException ex)
+            {
+                logger.LogWarning("Telegram rate limited — waiting {RetryAfter}s before resuming", ex.RetryAfterSeconds);
+                await Task.Delay(TimeSpan.FromSeconds(ex.RetryAfterSeconds), stoppingToken);
+            }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error during Telegram message polling");
@@ -80,6 +88,40 @@ public sealed class TelegramBridgeService(
         }
 
         logger.LogInformation("Telegram bridge service stopping");
+    }
+
+    private async Task<bool> WaitForAvailabilityAsync(CancellationToken stoppingToken)
+    {
+        for (var attempt = 1; attempt <= MaxStartupRetries; attempt++)
+        {
+            try
+            {
+                if (await _telegramClient.IsAvailableAsync(stoppingToken))
+                    return true;
+
+                logger.LogError("Telegram bot token is invalid — Telegram bridge is disabled");
+                return false;
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                return false;
+            }
+            catch (Exception ex)
+            {
+                if (attempt == MaxStartupRetries)
+                {
+                    logger.LogError(ex, "Telegram API unreachable after {Attempts} attempts — Telegram bridge is disabled", MaxStartupRetries);
+                    return false;
+                }
+
+                var delay = TimeSpan.FromSeconds(Math.Pow(2, attempt));
+                logger.LogWarning(ex, "Telegram API unreachable (attempt {Attempt}/{MaxAttempts}), retrying in {Delay}s",
+                    attempt, MaxStartupRetries, delay.TotalSeconds);
+                await Task.Delay(delay, stoppingToken);
+            }
+        }
+
+        return false;
     }
 
     private async Task ProcessMessageAsync(IncomingMessage message, string apiKey, CancellationToken cancellationToken)
