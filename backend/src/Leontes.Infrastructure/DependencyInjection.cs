@@ -1,9 +1,11 @@
 using Leontes.Application;
 using Leontes.Application.Chat;
+using Leontes.Application.Signal;
 using Leontes.Infrastructure.AI;
 using Leontes.Infrastructure.AI.Tools;
 using Leontes.Infrastructure.Data;
 using Leontes.Infrastructure.Data.Interceptors;
+using Leontes.Infrastructure.Signal;
 using Microsoft.Agents.AI;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
@@ -36,6 +38,7 @@ public static class DependencyInjection
         services.AddScoped<ApplicationDbContextInitializer>();
 
         AddAiServices(services, configuration);
+        AddSignalServices(services, configuration);
 
         return services;
     }
@@ -62,5 +65,17 @@ public static class DependencyInjection
                 loggerFactory: sp.GetService<Microsoft.Extensions.Logging.ILoggerFactory>()));
 
         services.AddScoped<IChatService, ChatService>();
+    }
+
+    private static void AddSignalServices(IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<SignalOptions>(configuration.GetSection(SignalOptions.SectionName));
+
+        services.AddHttpClient<ISignalClient, SignalRestClient>(client =>
+        {
+            var baseUrl = configuration[$"{SignalOptions.SectionName}:BaseUrl"] ?? "http://localhost:8081";
+            client.BaseAddress = new Uri(baseUrl);
+        })
+        .AddStandardResilienceHandler();
     }
 }

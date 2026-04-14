@@ -1,8 +1,12 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Worker"><PropertyGroup>  <UserSecretsId>7079f596-dc6d-426f-8d37-dacd99b8648a</UserSecretsId>
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <UserSecretsId>7079f596-dc6d-426f-8d37-dacd99b8648a</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" />
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
     <PackageReference Include="Serilog.AspNetCore" />
     <PackageReference Include="Serilog.Enrichers.ClientInfo" />
     <PackageReference Include="Serilog.Sinks.Console" />
