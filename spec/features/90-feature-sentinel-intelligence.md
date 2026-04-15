@@ -325,6 +325,7 @@ Channel selection (CLI SSE, Signal, Telegram, queued) is handled by the `IWorkfl
 - [ ] Each monitor can be independently enabled/disabled via configuration
 - [ ] Monitor errors do not crash the Worker service
 - [ ] Sensitive data (clipboard content, passwords) is never persisted or logged
+- [ ] `leontes init` includes a step to configure Sentinel defaults (watched directories, enabled monitors)
 
 ## Out of Scope
 

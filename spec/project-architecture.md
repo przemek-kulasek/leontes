@@ -22,6 +22,7 @@ Three executable projects running on the user's PC, sharing one AI engine and on
 | Knowledge Graph | Shared (Infrastructure) | PostgreSQL 17 + pgvector | Entities, relationships, semantic search, tool usage tracking |
 | AI Layer | Shared (Infrastructure) | Microsoft.Agents.AI | LLM orchestration, tool dispatch, two model tiers (Large/Small) via keyed DI |
 | Agent Persona | Shared (Configuration) | persona.md + PersonaOptions | Identity, behavior, boundaries, per-stage temperature |
+| Memory Consolidation | Leontes.Api | IHostedService | Periodic background distillation of observations into insights |
 | Token Metering | Shared (Infrastructure) | M.E.AI UsageDetails + OpenTelemetryAgent | Per-call token tracking, budget enforcement |
 | Tool Forge | Shared (Infrastructure) | Roslyn + code gen | Agent writes tool classes → compile → test → register |
 

@@ -435,8 +435,10 @@ dotnet ef migrations add AddPrivacyGovernanceTables \
 - [ ] Excluded applications list prevents window title logging
 - [ ] Data purge log records every deletion for audit
 - [ ] CLI `leontes privacy` commands work for all operations
+- [ ] CLI conversation management commands work (`leontes conversations list`, `leontes conversations delete {id}`)
 - [ ] API endpoints expose all privacy operations
 - [ ] Changing privacy settings takes effect within the current monitor polling cycle
+- [ ] `leontes init` includes the privacy consent step and per-monitor opt-in configuration
 
 ## Out of Scope
 

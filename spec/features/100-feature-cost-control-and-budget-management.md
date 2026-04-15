@@ -119,6 +119,8 @@ public sealed record TokenUsage(
 
 **Integration:** The `IResilientLlmClient` (feature 85) calls `ITokenMeter` internally. No LLM call bypasses metering.
 
+**Data flow:** `ITokenMeter` writes to `TokenUsageRecords` on every LLM call. Feature 95's `TelemetryCollector` reads these same records (via `ITokenLedger`) to populate per-stage and per-request token counts in `PipelineTrace` and `StageTrace`. Both systems share one source of truth.
+
 #### 2. Token Ledger (Infrastructure)
 
 Persistent record of all token usage. Written on every LLM call, queried for budget checks and reporting.

@@ -355,6 +355,7 @@ Vision is disabled by default and requires explicit opt-in. When `RequireExplici
 - [ ] Tree walking handles apps with poor accessibility markup gracefully (returns partial tree)
 - [ ] Vision is disabled by default and requires explicit opt-in
 - [ ] No vision data is persisted to database or logs
+- [ ] `leontes init` includes a step to enable/disable Structural Vision and configure excluded processes
 
 ## Out of Scope
 

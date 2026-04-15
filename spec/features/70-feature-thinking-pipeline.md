@@ -632,8 +632,8 @@ public static IServiceCollection AddThinkingPipeline(this IServiceCollection ser
 - [ ] Each LLM-calling stage uses the configured model tier (Large/Small) from feature 75
 - [ ] Each LLM-calling stage applies the configured temperature from feature 75
 - [ ] Each stage wraps execution in resilience boundary with degraded fallback (feature 85)
-- [ ] Token usage is metered per stage via ITokenMeter (feature 100)
-- [ ] Each stage emits DecisionRecords for non-trivial choices (feature 95)
+- [ ] Token usage is metered per stage via ITokenMeter (feature 100) — stub with no-op implementation until feature 100 is built
+- [ ] Each stage emits DecisionRecords for non-trivial choices (feature 95) — stub with no-op implementation until feature 95 is built
 
 ## Implementation Notes
 

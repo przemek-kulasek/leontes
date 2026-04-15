@@ -14,21 +14,21 @@
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Leontes" />
-  <meta property="og:title" content="Leontes — Self-Hosted AI Agent for Windows | Open Source" />
+  <meta property="og:title" content="Leontes: Self-Hosted AI Agent for Windows | Open Source" />
   <meta property="og:description" content="Not another chatbot wrapper. A self-hosted AI agent that thinks in 5 stages, monitors your OS, builds its own tools, and explains every decision. Open source. Windows." />
   <meta property="og:image" content="https://leontes.dev/logo.png" />
   <meta property="og:image:width" content="512" />
   <meta property="og:image:height" content="512" />
-  <meta property="og:image:alt" content="Leontes — AI agent with cognitive architecture, geometric lion logo" />
+  <meta property="og:image:alt" content="Leontes, AI agent with cognitive architecture, geometric lion logo" />
   <meta property="og:url" content="https://leontes.dev/" />
   <meta property="og:locale" content="en_US" />
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Leontes — Self-Hosted AI Agent for Windows | Open Source" />
+  <meta name="twitter:title" content="Leontes: Self-Hosted AI Agent for Windows | Open Source" />
   <meta name="twitter:description" content="Not another chatbot wrapper. Self-hosted AI agent that thinks in 5 stages, monitors your OS, builds its own tools, and explains every decision." />
   <meta name="twitter:image" content="https://leontes.dev/logo.png" />
-  <meta name="twitter:image:alt" content="Leontes — AI agent with cognitive architecture, geometric lion logo" />
-  <title>Leontes — Self-Hosted AI Agent for Windows | Open Source</title>
+  <meta name="twitter:image:alt" content="Leontes, AI agent with cognitive architecture, geometric lion logo" />
+  <title>Leontes: Self-Hosted AI Agent for Windows | Open Source</title>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -90,8 +90,8 @@
   <!-- ── HERO ──────────────────────────────────────────────── -->
   <section class="hero">
     <div class="container">
-      <img src="logo.png" alt="Leontes — AI agent with cognitive architecture, geometric lion logo" class="hero-logo" />
-      <h1 class="sr-only">Leontes — Self-Hosted AI Agent for Windows | Open Source</h1>
+      <img src="logo.png" alt="Leontes, AI agent with cognitive architecture, geometric lion logo" class="hero-logo" />
+      <h1 class="sr-only">Leontes: Self-Hosted AI Agent for Windows | Open Source</h1>
       <p class="hero-tagline">
         An AI agent that <strong>thinks in stages</strong>,
         <strong>acts before you ask</strong>, and
@@ -104,10 +104,10 @@
       </p>
       <div class="hero-actions">
         <a href="https://github.com/przemek-kulasek/leontes" class="btn btn-primary" target="_blank" rel="noopener">
-          GitHub
+          Star on GitHub
         </a>
         <a href="https://github.com/przemek-kulasek/leontes/subscription" class="btn btn-ghost" target="_blank" rel="noopener">
-          Subscribe on GitHub
+          Watch for updates
         </a>
       </div>
     </div>
@@ -185,14 +185,14 @@
     <div class="container">
       <p class="section-label">Capabilities</p>
       <h2 class="section-title">What it can do</h2>
-      <p class="section-sub">Thirteen modules that work together. Not features bolted on top of an LLM.</p>
+      <p class="section-sub">Modules that work together. Not features bolted on top of an LLM.</p>
 
       <div class="features-grid">
 
         <div class="feature-card">
           <span class="feature-icon">🧬</span>
           <h3 class="feature-name">Hierarchical Memory</h3>
-          <p class="feature-desc">Four memory types modeled on neuroscience: working (context), episodic (past events), semantic (knowledge graph), procedural (learned skills). All in PostgreSQL with pgvector.</p>
+          <p class="feature-desc">Ask about a meeting from two weeks ago and it remembers. Mention Sarah and it knows she's on the Alpha team. Four memory types (working, episodic, semantic, procedural) in PostgreSQL with pgvector.</p>
         </div>
 
         <div class="feature-card">
@@ -204,7 +204,7 @@
         <div class="feature-card">
           <span class="feature-icon">🪟</span>
           <h3 class="feature-name">Structural Vision</h3>
-          <p class="feature-desc">Reads application UI via Windows UI Automation. Sees buttons and text as structured code, not pixels. Privacy exclusions prevent reading password fields.</p>
+          <p class="feature-desc">"What error is showing in that dialog?" It reads the UI tree via Windows UI Automation and answers from structure, not screenshots. Password fields and excluded apps are never captured.</p>
         </div>
 
         <div class="feature-card">
@@ -228,7 +228,7 @@
         <div class="feature-card">
           <span class="feature-icon">🔒</span>
           <h3 class="feature-name">Privacy First</h3>
-          <p class="feature-desc">All monitoring is opt-in. Review, export, or delete any stored data. "Forget Project X" cascades across every table. Sensitive data is never stored in plaintext.</p>
+          <p class="feature-desc">Say "forget Project X" and it's gone. Every conversation, memory, graph entity, and event mentioning it is hard-deleted. All monitoring is opt-in. You can export everything as JSON + Markdown at any time.</p>
         </div>
 
         <div class="feature-card">
@@ -240,7 +240,7 @@
         <div class="feature-card">
           <span class="feature-icon">🛡️</span>
           <h3 class="feature-name">Resilient</h3>
-          <p class="feature-desc">Bounded queues with backpressure. Stage-level degradation. If the LLM is down, Sentinel heuristics, local tools, and memory retrieval still work.</p>
+          <p class="feature-desc">LLM goes down? Sentinel heuristics, local tools, and memory retrieval keep working. Bounded queues with backpressure. Each pipeline stage degrades independently instead of failing the whole request.</p>
         </div>
 
         <div class="feature-card">
@@ -258,7 +258,7 @@
         <div class="feature-card">
           <span class="feature-icon">🔍</span>
           <h3 class="feature-name">Observable</h3>
-          <p class="feature-desc">Every pipeline execution is traced: per-stage timing, decision records, token usage. You can replay any interaction and see exactly what the agent considered, chose, and why.</p>
+          <p class="feature-desc">Why did it suggest that? Open the trace. Per-stage timing, decision records, token usage, confidence scores. Replay any interaction and see exactly what it considered before choosing.</p>
         </div>
 
         <div class="feature-card">

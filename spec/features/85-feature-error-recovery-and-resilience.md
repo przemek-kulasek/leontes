@@ -100,7 +100,7 @@ User Message
 
 #### 1. Bounded Processing Queue (Application)
 
-A `System.Threading.Channels.Channel<T>` with explicit capacity replaces any unbounded in-memory queue. All sources (CLI, Signal, Telegram, Sentinel) enqueue through it.
+A `System.Threading.Channels.Channel<T>` with explicit capacity replaces the current direct-dispatch model in the Processing Loop. The existing `ProcessingLoopService` is refactored to dequeue from this channel instead of processing messages inline. All sources (CLI, Signal, Telegram, Sentinel) enqueue through it.
 
 ```csharp
 public sealed class ProcessingQueue
