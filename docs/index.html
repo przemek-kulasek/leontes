@@ -3,62 +3,74 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Leontes is a self-hosted AI agent for Windows with a neuroscience-inspired cognitive pipeline. It thinks in stages, monitors your OS, builds its own tools, and explains its reasoning. Open source." />
-  <meta name="keywords" content="AI agent, cognitive architecture, Windows AI assistant, open source AI, self-hosted AI, proactive AI, desktop automation, UI automation, knowledge graph, tool generation, Signal bot, Telegram bot, AG-UI, MCP, A2A, local AI agent, privacy-first AI, neuroscience AI" />
+  <meta name="description" content="Self-hosted, open source AI agent for Windows. 5-stage cognitive pipeline, hierarchical memory, runtime tool generation, and full decision transparency. Proactive. No cloud required." />
+  <meta name="keywords" content="self-hosted AI agent, open source AI agent, Windows AI assistant, local AI agent, proactive AI agent, cognitive architecture AI, AI agent for developers, hierarchical memory AI, knowledge graph AI, AI tool generation, pgvector AI, .NET AI agent, Signal AI bot, Telegram AI bot, desktop AI automation, Windows UI automation, dual process AI, AG-UI, MCP, A2A, privacy-first AI" />
+  <meta name="author" content="Smaltsoft" />
+  <meta name="theme-color" content="#080e1a" />
   <meta name="robots" content="index, follow" />
   <link rel="canonical" href="https://leontes.dev/" />
+  <link rel="preconnect" href="https://www.googletagmanager.com" />
+  <link rel="preload" href="logo.png" as="image" />
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Leontes" />
-  <meta property="og:title" content="Leontes — AI Agent with a Cognitive Architecture" />
-  <meta property="og:description" content="A self-hosted AI agent that thinks in stages, monitors your OS, builds its own tools, and shows its work. Neuroscience-inspired. Open source. Windows." />
+  <meta property="og:title" content="Leontes — Self-Hosted AI Agent for Windows | Open Source" />
+  <meta property="og:description" content="Not another chatbot wrapper. A self-hosted AI agent that thinks in 5 stages, monitors your OS, builds its own tools, and explains every decision. Open source. Windows." />
   <meta property="og:image" content="https://leontes.dev/logo.png" />
+  <meta property="og:image:width" content="512" />
+  <meta property="og:image:height" content="512" />
+  <meta property="og:image:alt" content="Leontes — AI agent with cognitive architecture, geometric lion logo" />
   <meta property="og:url" content="https://leontes.dev/" />
   <meta property="og:locale" content="en_US" />
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Leontes — AI Agent with a Cognitive Architecture" />
-  <meta name="twitter:description" content="Self-hosted AI agent that thinks in stages, monitors your OS, builds its own tools, and explains its reasoning. Open source." />
+  <meta name="twitter:title" content="Leontes — Self-Hosted AI Agent for Windows | Open Source" />
+  <meta name="twitter:description" content="Not another chatbot wrapper. Self-hosted AI agent that thinks in 5 stages, monitors your OS, builds its own tools, and explains every decision." />
   <meta name="twitter:image" content="https://leontes.dev/logo.png" />
-  <title>Leontes — AI Agent with a Cognitive Architecture</title>
-  <!-- Structured Data -->
+  <meta name="twitter:image:alt" content="Leontes — AI agent with cognitive architecture, geometric lion logo" />
+  <title>Leontes — Self-Hosted AI Agent for Windows | Open Source</title>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "Leontes",
-    "description": "A self-hosted AI agent for Windows with a neuroscience-inspired cognitive architecture. Thinks in 5 stages (Perceive, Enrich, Plan, Execute, Reflect), monitors OS events through dual-process filtering, builds a hierarchical knowledge graph, generates its own tools at runtime, and explains every decision it makes.",
+    "description": "A self-hosted, open source AI agent for Windows with a neuroscience-inspired cognitive architecture. Thinks in 5 stages (Perceive, Enrich, Plan, Execute, Reflect), monitors OS events proactively through dual-process filtering, maintains a hierarchical knowledge graph in PostgreSQL with pgvector, generates its own tools at runtime via Roslyn, and explains every decision it makes.",
     "url": "https://leontes.dev",
+    "sameAs": "https://github.com/przemek-kulasek/leontes",
+    "downloadUrl": "https://github.com/przemek-kulasek/leontes",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "Windows",
+    "keywords": "self-hosted AI agent, open source AI agent, Windows AI assistant, cognitive architecture, knowledge graph, hierarchical memory, tool generation, proactive AI, local AI, pgvector, .NET AI",
     "offers": {
       "@type": "Offer",
       "price": "0",
-      "priceCurrency": "USD"
+      "priceCurrency": "USD",
+      "description": "Free for personal use under AGPL-3.0. Commercial license available."
     },
     "license": "https://www.gnu.org/licenses/agpl-3.0.html",
     "isAccessibleForFree": true,
     "author": {
       "@type": "Organization",
       "name": "Smaltsoft",
-      "url": "https://smaltsoft.com"
+      "url": "https://smaltsoft.com",
+      "sameAs": "https://smaltsoft.com"
     },
     "codeRepository": "https://github.com/przemek-kulasek/leontes",
-    "programmingLanguage": ["C#", ".NET"],
+    "programmingLanguage": ["C#", ".NET 10"],
     "featureList": [
-      "5-stage cognitive pipeline (Perceive, Enrich, Plan, Execute, Reflect)",
-      "Dual-process intelligence: fast heuristics + deliberate LLM reasoning",
-      "Hierarchical memory: working, episodic, semantic, procedural",
-      "Knowledge graph with graph-augmented retrieval (GraphRAG)",
-      "Runtime tool generation with Roslyn compilation and user approval",
-      "Structural UI reading via Windows UI Automation",
-      "Proactive OS monitoring (file system, clipboard, calendar, active window)",
-      "Confidence scoring and decision explainability",
-      "Token budget management with automatic model routing",
-      "Privacy-first: opt-in monitoring, data export, topic-based purge",
-      "Industry protocols: AG-UI, MCP, A2A",
-      "CLI, Signal (E2E encrypted), and Telegram communication",
-      "Self-hosted with no cloud dependency"
+      "5-stage cognitive pipeline: Perceive, Enrich, Plan, Execute, Reflect",
+      "Dual-process intelligence: fast local heuristics + deliberate LLM reasoning",
+      "Hierarchical memory: working, episodic, semantic, procedural — all in PostgreSQL",
+      "Knowledge graph with graph-augmented retrieval (GraphRAG) via pgvector",
+      "Runtime tool generation with Roslyn compilation and user approval gate",
+      "Structural UI reading via Windows UI Automation — no screenshots",
+      "Proactive OS monitoring: file system, clipboard, calendar, active window",
+      "Confidence scoring and full decision trace explainability",
+      "Token budget management with automatic model tier routing",
+      "Privacy-first: opt-in monitoring, data export, topic-based cascade purge",
+      "Industry protocols: AG-UI, MCP, A2A via Microsoft Agent Framework",
+      "Multi-channel: CLI, Signal (E2E encrypted), Telegram Bot API",
+      "Fully self-hosted — runs offline with Ollama, no cloud dependency"
     ]
   }
   </script>
@@ -79,7 +91,7 @@
   <section class="hero">
     <div class="container">
       <img src="logo.png" alt="Leontes — AI agent with cognitive architecture, geometric lion logo" class="hero-logo" />
-      <h1 class="sr-only">Leontes — AI Agent with a Cognitive Architecture</h1>
+      <h1 class="sr-only">Leontes — Self-Hosted AI Agent for Windows | Open Source</h1>
       <p class="hero-tagline">
         An AI agent that <strong>thinks in stages</strong>,
         <strong>acts before you ask</strong>, and
