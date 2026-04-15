@@ -48,6 +48,7 @@ The result: your agent notices when you copy an IBAN and asks if you want to fin
 | **Cost Aware** | Token budgets per feature, two model tiers (Large for reasoning, Small for summarization), budget-driven downgrading, throttling before you hit limits |
 | **Privacy First** | All monitoring is opt-in. Review, export, or delete any stored data. "Forget Project X" cascades across all tables |
 | **Multi-Channel** | CLI + Signal (E2E encrypted) + Telegram. Same brain, same memory, any device |
+| **Agent Persona** | Configurable personality, tone, and boundaries in `persona.md`. Two model tiers (Large for reasoning, Small for summarization). Per-stage temperature. Budget-driven tier downgrading |
 | **Protocol Standards** | AG-UI (web frontends), MCP (external tool servers), A2A (agent-to-agent) — all via Microsoft Agent Framework |
 
 ## Architecture
@@ -388,7 +389,7 @@ Ordered by implementation sequence:
 
 ## Status
 
-Early development. Core infrastructure (CLI, auth, Signal, Telegram) is implemented. The cognitive architecture (17 feature specs) is fully designed and ready for implementation.
+Early development. Core infrastructure (CLI, auth, Signal, Telegram) is implemented. The cognitive architecture (18 feature specs) is fully designed and ready for implementation.
 
 ## License
 

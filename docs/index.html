@@ -173,7 +173,7 @@
     <div class="container">
       <p class="section-label">Capabilities</p>
       <h2 class="section-title">What it can do</h2>
-      <p class="section-sub">Twelve modules that work together. Not features bolted on top of an LLM.</p>
+      <p class="section-sub">Thirteen modules that work together. Not features bolted on top of an LLM.</p>
 
       <div class="features-grid">
 
@@ -249,6 +249,12 @@
           <p class="feature-desc">Every pipeline execution is traced: per-stage timing, decision records, token usage. You can replay any interaction and see exactly what the agent considered, chose, and why.</p>
         </div>
 
+        <div class="feature-card">
+          <span class="feature-icon">🎭</span>
+          <h3 class="feature-name">Agent Persona</h3>
+          <p class="feature-desc">Personality, tone, and boundaries defined in a plain Markdown file. Two model tiers — large for deep reasoning, small for fast summaries. Per-stage temperature. Budget pressure automatically routes tasks to the cheaper tier.</p>
+        </div>
+
       </div>
     </div>
   </section>
@@ -288,7 +294,7 @@
         <span class="status-dot"></span>
         Early development
       </div>
-      <h2 class="section-title">17 feature specs, fully designed</h2>
+      <h2 class="section-title">18 feature specs, fully designed</h2>
       <p class="status-desc">
         Core infrastructure is implemented (CLI, auth, Signal, Telegram). The cognitive architecture is specified down to the interface level and ready for implementation.
       </p>
@@ -304,6 +310,7 @@
         <li>Cost Management</li>
         <li>Error Recovery</li>
         <li>AG-UI / MCP / A2A</li>
+        <li>Agent Persona</li>
         <li>CLI + Signal + Telegram</li>
       </ul>
       <a href="https://github.com/przemek-kulasek/leontes" class="btn btn-primary" target="_blank" rel="noopener">
