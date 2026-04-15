@@ -9,7 +9,7 @@ Without configurable personality and per-stage model settings, the agent feels g
 ## Prerequisites
 
 - Working CLI chat (feature 10)
-- Thinking Pipeline (feature 70) — persona and model config feed into each pipeline stage
+- Proactive Communication (feature 65) — keyed DI and persona are consumed by the Thinking Pipeline (feature 70), which is implemented after this feature
 
 ## Rules
 

@@ -9,7 +9,7 @@ The current Processing Loop is a linear request-response cycle: receive message 
 - Working CLI chat with SSE streaming (feature 10)
 - API key authentication (feature 40)
 - Proactive Communication infrastructure (feature 65) — for RequestPort and WorkflowEvent bridging
-- Agent Persona & Model Configuration (feature 75) — persona instructions, per-stage model tier and temperature
+- Agent Persona & Model Configuration (feature 75) — persona instructions, keyed IChatClient (Large/Small), per-stage temperature
 
 ## Rules
 
@@ -634,6 +634,20 @@ public static IServiceCollection AddThinkingPipeline(this IServiceCollection ser
 - [ ] Each stage wraps execution in resilience boundary with degraded fallback (feature 85)
 - [ ] Token usage is metered per stage via ITokenMeter (feature 100)
 - [ ] Each stage emits DecisionRecords for non-trivial choices (feature 95)
+
+## Implementation Notes
+
+The code examples in this spec use simplified signatures for clarity. The actual `Microsoft.Agents.AI.Workflows` API differs in several ways that must be reconciled during implementation:
+
+- `Executor<TInput, TOutput>` constructor requires a `string id` parameter (not a `Name` property override)
+- The handler method is `HandleAsync(TInput message, IWorkflowContext context, CancellationToken)`, not `ExecuteAsync`
+- Context parameter type is `IWorkflowContext`, not `ExecutorContext`
+- Return type is `ValueTask<TOutput>`, not `Task<TOutput>`
+- Event emission and HITL methods on `IWorkflowContext` may have different names than `AddEventAsync`/`SendMessageAsync`
+- The builder may be `AgentWorkflowBuilder` rather than `WorkflowBuilder`
+- `CheckpointManager` factory method needs verification against the framework source
+
+These details should be resolved against the framework source code at `C:\WIP\agent-framework` before starting implementation.
 
 ## Out of Scope
 

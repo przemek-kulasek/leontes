@@ -60,17 +60,17 @@
     "featureList": [
       "5-stage cognitive pipeline: Perceive, Enrich, Plan, Execute, Reflect",
       "Dual-process intelligence: fast local heuristics + deliberate LLM reasoning",
-      "Hierarchical memory: working, episodic, semantic, procedural — all in PostgreSQL",
+      "Hierarchical memory: working, episodic, semantic, procedural. All in PostgreSQL",
       "Knowledge graph with graph-augmented retrieval (GraphRAG) via pgvector",
       "Runtime tool generation with Roslyn compilation and user approval gate",
-      "Structural UI reading via Windows UI Automation — no screenshots",
+      "Structural UI reading via Windows UI Automation, no screenshots",
       "Proactive OS monitoring: file system, clipboard, calendar, active window",
       "Confidence scoring and full decision trace explainability",
       "Token budget management with automatic model tier routing",
       "Privacy-first: opt-in monitoring, data export, topic-based cascade purge",
       "Industry protocols: AG-UI, MCP, A2A via Microsoft Agent Framework",
       "Multi-channel: CLI, Signal (E2E encrypted), Telegram Bot API",
-      "Fully self-hosted — runs offline with Ollama, no cloud dependency"
+      "Fully self-hosted, runs offline with Ollama, no cloud dependency"
     ]
   }
   </script>
@@ -148,12 +148,12 @@
         <div class="pipeline-stage">
           <span class="pipeline-num">5</span>
           <h3 class="pipeline-name">Reflect</h3>
-          <p class="pipeline-desc">Store memories, update the knowledge graph, extract insights. The agent gets better with every conversation.</p>
+          <p class="pipeline-desc">Store what worked, who you mentioned, what you prefer. Next time you ask about Sarah, it already knows she's on the Alpha team.</p>
         </div>
       </div>
 
       <p class="pipeline-footnote">
-        Built on Microsoft Agent Framework Workflows. Each stage checkpoints its state. Every decision is traced. Ask "why did you do that?" and get a real answer.
+        Each stage checkpoints its state. If the server crashes mid-pipeline, it picks up where it left off. Every decision is traced. Ask "why did you do that?" and get a real answer. Built on Microsoft Agent Framework Workflows.
       </p>
     </div>
   </section>
@@ -264,7 +264,7 @@
         <div class="feature-card">
           <span class="feature-icon">🎭</span>
           <h3 class="feature-name">Agent Persona</h3>
-          <p class="feature-desc">Personality, tone, and boundaries defined in a plain Markdown file. Two model tiers — large for deep reasoning, small for fast summaries. Per-stage temperature. Budget pressure automatically routes tasks to the cheaper tier.</p>
+          <p class="feature-desc">Personality, tone, and boundaries defined in a plain Markdown file. Two model tiers: large for deep reasoning, small for fast summaries. Per-stage temperature. Budget pressure automatically routes tasks to the cheaper tier.</p>
         </div>
 
       </div>
@@ -306,9 +306,9 @@
         <span class="status-dot"></span>
         Early development
       </div>
-      <h2 class="section-title">18 feature specs, fully designed</h2>
+      <h2 class="section-title">18 features, 6 built, 12 specified</h2>
       <p class="status-desc">
-        Core infrastructure is implemented (CLI, auth, Signal, Telegram). The cognitive architecture is specified down to the interface level and ready for implementation.
+        Core infrastructure is working (CLI, auth, Signal, Telegram). The cognitive architecture is specified down to the interface level and ready for implementation.
       </p>
       <ul class="mvp-list">
         <li>Cognitive Pipeline</li>
@@ -335,9 +335,9 @@
   <section class="contact-section">
     <div class="container">
       <p class="section-label">Get in touch</p>
-      <h2 class="section-title">Questions, ideas, or want to contribute?</h2>
+      <h2 class="section-title">Want to build on this?</h2>
       <p class="contact-desc">
-        Leontes is built in the open. Reach out via email or open an issue on GitHub.
+        The spec is public and PRs are welcome. Found a gap? Have a use case? Reach out or open an issue.
       </p>
       <div class="contact-actions">
         <a href="mailto:leontes.dev@pm.me" class="btn btn-primary">
@@ -354,13 +354,13 @@
   <footer class="footer">
     <div class="container">
       <div class="footer-inner">
-        <p class="footer-brand"><span>LEONTES</span> — Proactive OS Partner</p>
+        <p class="footer-brand"><span>LEONTES</span> · Proactive OS Partner</p>
         <nav class="footer-links">
           <a href="https://github.com/przemek-kulasek/leontes" target="_blank" rel="noopener">GitHub</a>
           <a href="mailto:leontes.dev@pm.me">leontes.dev@pm.me</a>
           <a href="https://smaltsoft.com/" target="_blank" rel="noopener">Smaltsoft</a>
         </nav>
-        <p class="footer-license">AGPL-3.0 — free for personal use · commercial license available</p>
+        <p class="footer-license">AGPL-3.0 · free for personal use · commercial license available</p>
       </div>
     </div>
   </footer>

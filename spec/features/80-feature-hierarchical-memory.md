@@ -487,6 +487,13 @@ This migration:
 - Chunking strategy: embed entire conversation turns or split into sentences?
 - Memory decay: should old, never-accessed memories lose importance over time?
 
+## Setup Wizard Integration
+
+The `leontes init` wizard (feature 30) must be extended to configure the embedding model:
+- Add embedding model selection step (choose from available Ollama models or configure a cloud embedding API)
+- Store the embedding model ID and dimensions in `AiProvider` configuration alongside the Large/Small chat models
+- The `EmbeddingDimensions` config value must match the selected model's output dimensions
+
 ## Out of Scope
 
 - Separate vector database (Qdrant, Milvus, Pinecone) — pgvector handles this at our scale

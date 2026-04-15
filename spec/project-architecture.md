@@ -4,7 +4,7 @@
 
 Three executable projects running on the user's PC, sharing one AI engine and one knowledge graph:
 
-1. **Leontes.Api** — HTTP endpoints + Processing Loop (`IHostedService`). The brain. Handles chat requests, runs the LLM, manages the Synapse Graph. Includes rate limiting, CORS, auto-migration on startup.
+1. **Leontes.Api** — HTTP endpoints + Thinking Pipeline (`IHostedService`). The brain. Handles chat requests, runs the LLM, manages the Synapse Graph. Includes rate limiting, CORS, auto-migration on startup.
 2. **Leontes.Worker** — Windows Service running the Proactive Layer. Sentinel monitors OS events, messaging bridges (Signal, Telegram) receive mobile messages and forward them to the API.
 3. **Leontes.Cli** — dotnet tool (`leontes`). The user interface. Setup wizard (`leontes init`), interactive chat, and future commands.
 
@@ -13,7 +13,7 @@ Three executable projects running on the user's PC, sharing one AI engine and on
 | Component | Project | Tech | Responsibility |
 |-----------|---------|------|----------------|
 | Backend API | Leontes.Api | .NET 10 Minimal API | Endpoints, auth, SSE streaming, rate limiting, CORS |
-| Processing Loop | Leontes.Api | IHostedService | Message intake → context → LLM → response |
+| Thinking Pipeline | Leontes.Api | IHostedService | Message intake → Perceive → Enrich → Plan → Execute → Reflect |
 | Sentinel | Leontes.Worker | Windows Service | FS watcher, clipboard, calendar, active window → pattern match → trigger |
 | Signal Bridge | Leontes.Worker | Windows Service | Receives Signal messages, forwards to API |
 | Telegram Bridge | Leontes.Worker | Windows Service | Receives Telegram messages, forwards to API |
@@ -35,12 +35,12 @@ Structural Vision (Worker):
   UI Automation → Element Tree → AI reads/interacts via API
 
 Channels:
-  CLI → HTTP → Api → Processing Loop → Synapse Graph
-                                       → LLM + Tools
-                                       → SSE Response → CLI
+  CLI → HTTP → Api → Thinking Pipeline → Synapse Graph
+                                        → LLM + Tools
+                                        → SSE Response → CLI
 
-  Signal   → Worker → HTTP → Api → Processing Loop → Response → Worker → Signal
-  Telegram → Worker → HTTP → Api → Processing Loop → Response → Worker → Telegram
+  Signal   → Worker → HTTP → Api → Thinking Pipeline → Response → Worker → Signal
+  Telegram → Worker → HTTP → Api → Thinking Pipeline → Response → Worker → Telegram
 
 Tool Forge:
   Gap detected → Generate tool class → Compile + test → User approval → Register
@@ -64,8 +64,9 @@ Single-user. API key or JWT for CLI ↔ Api. Signal via bot registration.
 
 | Decision | Rationale |
 |----------|-----------|
-| Two hosts (Api + Worker) + CLI tool | Api and Processing Loop are tightly coupled (SSE streaming). Sentinel needs Windows APIs (separate process). CLI is a user-facing tool. |
-| Processing Loop in Api, not Worker | Processing Loop handles HTTP requests from CLI and returns SSE streams — must live where Kestrel lives |
+| Two hosts (Api + Worker) + CLI tool | Api and Thinking Pipeline are tightly coupled (SSE streaming). Sentinel needs Windows APIs (separate process). CLI is a user-facing tool. |
+| Thinking Pipeline in Api, not Worker | Pipeline handles HTTP requests from CLI and returns SSE streams, must live where Kestrel lives |
+| Agent Framework Workflows over custom pipeline | Built-in checkpointing (survives restarts), RequestPort for human-in-the-loop, WorkflowEvent stream for observability, conditional branching and retry |
 | Worker as Windows Service | Sentinel needs OS-level access (file system, clipboard, active window). Must persist across user sessions. |
 | CLI as dotnet tool | Installed globally, invoked as `leontes` from anywhere. No backend project references — HTTP only. |
 | PostgreSQL for graph + vectors | One database for entities, relationships, pgvector search. Mature .NET/EF Core support via Pgvector.EntityFrameworkCore. SQLite evaluated and rejected — no NuGet package for sqlite-vec, no EF Core vector integration, pre-1.0 maturity. |

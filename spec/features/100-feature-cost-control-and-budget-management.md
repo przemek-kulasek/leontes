@@ -251,7 +251,7 @@ public enum ModelTier
 3. If budget state is Throttled → downgrade all tasks to Small tier
 4. User-facing chat is never downgraded without notification — the user sees "Using a faster model to conserve budget"
 
-**Model configuration** is defined in `AiProvider:Models` (feature 75). Cost-specific fields are added here:
+**Model configuration** is defined in `AiProvider:Models` (feature 75). Cost fields extend the existing `ModelOptions` class from feature 75 rather than duplicating model identity in a separate config section:
 
 ```json
 {

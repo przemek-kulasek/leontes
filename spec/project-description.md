@@ -100,7 +100,7 @@ Interactive CLI (`leontes init`) for first-run configuration: spins up PostgreSQ
 
 ## Post-MVP
 
-Ghost Overlay (transparent system overlay), Voice I/O, Web Dashboard (via AG-UI), The Vault (sandboxed execution in Docker/Micro-VM).
+Ghost Overlay (transparent system overlay), Voice I/O, Web Dashboard (via AG-UI), The Vault (sandboxed execution in Docker/Micro-VM), AG-UI Generative UI.
 
 ## Licensing & Monetization
 
@@ -113,6 +113,6 @@ Source code is fully public. AGPL enforces this split: commercial users who don'
 
 ## Scope Boundaries
 
-- **MVP:** Cognitive Pipeline, Agent Persona & Model Config, Hierarchical Memory, Sentinel (all 4 inputs), Structural Vision, Synapse Graph, CLI + Signal + Telegram, Tool Forge, Proactive Communication, Observability, Privacy Controls, Cost Management, Error Recovery, Setup Wizard.
-- **Post-MVP:** Ghost Overlay, voice, web dashboard, Vault (sandboxed execution), AG-UI/A2A/MCP protocol endpoints.
+- **MVP:** Cognitive Pipeline, Agent Persona & Model Config, Hierarchical Memory, Sentinel (all 4 inputs), Structural Vision, Synapse Graph, CLI + Signal + Telegram, Tool Forge, Proactive Communication, Observability, Privacy Controls, Cost Management, Error Recovery, Industry Protocol Standards (AG-UI, MCP, A2A), Setup Wizard.
+- **Post-MVP:** Ghost Overlay, voice, web dashboard, Vault (sandboxed execution), AG-UI Generative UI.
 - **Out of scope:** Multi-user, macOS/Linux Structural Vision, multi-provider load balancing.

@@ -8,9 +8,9 @@
 
 [leontes.dev](https://leontes.dev)
 
-Leontes is a proactive AI agent for Windows with a neuroscience-inspired cognitive architecture. It doesn't just respond to what you type — it monitors your system, remembers what matters, and extends its own capabilities at runtime.
+Leontes is a proactive AI agent for Windows with a neuroscience-inspired cognitive architecture. It doesn't just respond to what you type. It monitors your system, remembers what matters, and extends its own capabilities at runtime.
 
-Talk to it from your terminal. Message it from your phone via Signal or Telegram. Or don't talk to it at all — it'll notice when you need help.
+Talk to it from your terminal. Message it from your phone via Signal or Telegram. Or don't talk to it at all. It'll notice when you need help.
 
 ## How it thinks
 
@@ -23,16 +23,16 @@ entities    memories    strategy   response    learning
  + intent   + graph     + tools    + streaming  + graph updates
 ```
 
-Each stage is an independent executor. The pipeline checkpoints after every stage — if the server crashes, it resumes from where it left off. The agent can pause mid-pipeline to ask you a question and continue when you answer.
+Each stage is an independent executor. The pipeline checkpoints after every stage. If the server crashes, it resumes from where it left off. The agent can pause mid-pipeline to ask you a question and continue when you answer.
 
 ### System 1 + System 2
 
 Not everything goes through the full pipeline. Leontes uses a dual-process architecture:
 
-- **System 1 (Sentinel):** Fast, local, free. Watches your file downloads, clipboard, calendar, and active windows. Applies heuristic filters — regex, frequency analysis, time rules. No LLM calls. Handles most OS events by reflex.
+- **System 1 (Sentinel):** Fast, local, free. Watches your file downloads, clipboard, calendar, and active windows. Applies heuristic filters (regex, frequency analysis, time rules). No LLM calls. Handles most OS events by reflex.
 - **System 2 (Thinking Pipeline):** Slow, deliberate, powerful. The full 5-stage pipeline with LLM reasoning. Only activated when System 1 detects something it can't handle alone.
 
-The result: your agent notices when you copy an IBAN and asks if you want to find the matching invoice — without burning tokens on every clipboard change.
+The result: your agent notices when you copy an IBAN and asks if you want to find the matching invoice. No tokens burned on every clipboard change.
 
 ## What makes this different
 
@@ -40,8 +40,8 @@ The result: your agent notices when you copy an IBAN and asks if you want to fin
 |---|---|
 | **Cognitive Pipeline** | 5-stage thinking process (Perceive → Enrich → Plan → Execute → Reflect) with checkpoint recovery and mid-task human interaction |
 | **Hierarchical Memory** | 4 memory types: Working (context), Episodic (past events via pgvector), Semantic (knowledge graph), Procedural (learned skills) |
-| **Proactive Intelligence** | Dual-process Sentinel — local heuristics filter OS events, only surprising ones reach the LLM |
-| **Structural Vision** | Reads application UI via Windows UI Automation — sees buttons and text as code, not pixels |
+| **Proactive Intelligence** | Dual-process Sentinel: local heuristics filter OS events, only surprising ones reach the LLM |
+| **Structural Vision** | Reads application UI via Windows UI Automation. Sees buttons and text as code, not pixels |
 | **Self-Extending** | Writes, compiles, tests, and registers new tools at runtime via Roslyn. You approve before anything runs |
 | **Confidence Scoring** | Signals how certain it is (0–1). Asks for clarification when uncertain, proceeds confidently when sure |
 | **Show Your Work** | Every decision is traced. Ask "Why did you do that?" and get a real answer from stored pipeline traces |
@@ -49,7 +49,7 @@ The result: your agent notices when you copy an IBAN and asks if you want to fin
 | **Privacy First** | All monitoring is opt-in. Review, export, or delete any stored data. "Forget Project X" cascades across all tables |
 | **Multi-Channel** | CLI + Signal (E2E encrypted) + Telegram. Same brain, same memory, any device |
 | **Agent Persona** | Configurable personality, tone, and boundaries in `persona.md`. Two model tiers (Large for reasoning, Small for summarization). Per-stage temperature. Budget-driven tier downgrading |
-| **Protocol Standards** | AG-UI (web frontends), MCP (external tool servers), A2A (agent-to-agent) — all via Microsoft Agent Framework |
+| **Protocol Standards** | AG-UI (web frontends), MCP (external tool servers), A2A (agent-to-agent). All via Microsoft Agent Framework |
 
 ## Architecture
 
@@ -369,16 +369,16 @@ Ordered by implementation sequence:
 | # | Feature | Status |
 |---|---|---|
 | 10 | CLI Chat | ✅ Implemented |
-| 20 | Conversation Memory | ✅ Implemented (superseded by 80) |
+| 20 | Conversation Memory | ✅ Merged into #80 |
 | 30 | PoC / Setup Wizard | ✅ Implemented |
 | 40 | API Authentication | ✅ Implemented |
 | 50 | Signal Support | ✅ Implemented |
 | 60 | Telegram Support | ✅ Implemented |
 | 65 | Proactive Communication | 📋 Specified |
-| 70 | Thinking Pipeline | 📋 Specified |
 | 75 | Agent Persona & Model Configuration | 📋 Specified |
-| 80 | Hierarchical Memory | 📋 Specified |
+| 70 | Thinking Pipeline | 📋 Specified |
 | 85 | Error Recovery & Resilience | 📋 Specified |
+| 80 | Hierarchical Memory | 📋 Specified |
 | 90 | Sentinel Intelligence | 📋 Specified |
 | 95 | Observability & Cognitive Telemetry | 📋 Specified |
 | 100 | Cost Control & Budget Management | 📋 Specified |
@@ -389,8 +389,8 @@ Ordered by implementation sequence:
 
 ## Status
 
-Early development. Core infrastructure (CLI, auth, Signal, Telegram) is implemented. The cognitive architecture (18 feature specs) is fully designed and ready for implementation.
+Early development. Core infrastructure (CLI, auth, Signal, Telegram) is implemented. The cognitive architecture is fully designed across 18 feature specs, 6 implemented and 12 specified.
 
 ## License
 
-AGPL-3.0 — free for personal use. Commercial use requires a [commercial license](mailto:leontes.dev@pm.me).
+AGPL-3.0. Free for personal use. Commercial use requires a [commercial license](mailto:leontes.dev@pm.me).

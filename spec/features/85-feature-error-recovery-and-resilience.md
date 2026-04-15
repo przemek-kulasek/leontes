@@ -10,7 +10,7 @@ Without a resilience strategy, a single transient failure can leave the agent st
 
 - Working feature 10 (CLI Chat)
 - Working feature 65 (Proactive Communication — for failure notifications)
-- Working feature 65 (Thinking Pipeline — the primary system to protect)
+- Working feature 70 (Thinking Pipeline — the primary system to protect)
 
 ## Rules
 

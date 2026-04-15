@@ -264,7 +264,7 @@ public sealed class SentinelService(
 
 Monitors default to disabled where they require additional setup (Calendar needs Outlook access, ActiveWindow needs UI Automation permissions). FileSystem and Clipboard are enabled by default as they require no additional configuration.
 
-### Notification Delivery (via Proactive Communication — Feature 55)
+### Notification Delivery (via Proactive Communication — Feature 65)
 
 Sentinel notifications and alerts use the Proactive Communication infrastructure (feature 65). The SentinelService emits events through the `IWorkflowEventBridge` rather than managing channel selection directly:
 
@@ -291,6 +291,8 @@ await context.SendMessageAsync(
 ```
 
 Channel selection (CLI SSE, Signal, Telegram, queued) is handled by the `IWorkflowEventBridge` — the Sentinel doesn't need to know which channel the user is on.
+
+**Worker response handling:** When a Sentinel-escalated event triggers a `RequestPort` question (e.g., "You copied an IBAN, find the invoice?"), the user's response flows back through the event bridge. The Worker registers as a client of `IWorkflowEventBridge` (feature 65) to receive responses to events it originated. The Worker bridges (Signal, Telegram) map user text replies back to `POST /api/v1/stream/respond` with the original `requestId`.
 
 ### Error Handling
 

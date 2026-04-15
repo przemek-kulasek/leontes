@@ -45,7 +45,7 @@ Keep `README.md` up to date when adding or removing features, dependencies, or s
 ### Directory Layout
 
 ```
-/backend/src/Leontes.Api             — .NET 10 Minimal API host + Processing Loop (IHostedService)
+/backend/src/Leontes.Api             — .NET 10 Minimal API host + Thinking Pipeline (IHostedService)
 /backend/src/Leontes.Worker          — .NET 10 Windows Service (Sentinel + Signal/Telegram bridges)
 /backend/src/Leontes.Cli             — .NET 10 console app / dotnet tool (installed as `leontes`)
 /backend/src/Leontes.Application     — Service interfaces, DTOs, feature contracts
@@ -59,7 +59,7 @@ Keep `README.md` up to date when adding or removing features, dependencies, or s
 
 Three executable projects, two always-running hosts + one CLI tool:
 
-1. **Leontes.Api** — HTTP endpoints + Processing Loop (`IHostedService`). The brain. Handles chat requests from CLI (via HTTP) and from Signal/Telegram (forwarded by Worker). Runs the LLM, tools, Synapse Graph queries. Includes rate limiting, CORS, auto-migration on startup.
+1. **Leontes.Api** — HTTP endpoints + Thinking Pipeline (`IHostedService`). The brain. Handles chat requests from CLI (via HTTP) and from Signal/Telegram (forwarded by Worker). Runs the LLM, tools, Synapse Graph queries. Includes rate limiting, CORS, auto-migration on startup.
 2. **Leontes.Worker** — Windows Service (`UseWindowsService()`) running Sentinel + messaging bridges (Signal, Telegram). Always on. Forwards Signal/Telegram messages to the API. Sends notifications when Sentinel triggers.
 3. **Leontes.Cli** — dotnet tool installed globally as `leontes`. Commands: `leontes init` (setup wizard), `leontes chat` (interactive chat), `leontes` (default: chat). Communicates with the API via HTTP.
 
@@ -76,9 +76,9 @@ Dependency flows inward only. Api, Worker, and Cli are outer-layer hosts — the
 
 ### Communication
 
-- Three channels: CLI (terminal), Signal (E2E encrypted mobile), and Telegram (official Bot API), all feeding into one async processing loop hosted in the Api via a shared `IMessagingClient` abstraction
+- Three channels: CLI (terminal), Signal (E2E encrypted mobile), and Telegram (official Bot API), all feeding into one async Thinking Pipeline hosted in the Api via a shared `IMessagingClient` abstraction
 - CLI communicates with Api via HTTP; Signal and Telegram messages are received by Worker and forwarded to Api
-- Data flow: CLI/Signal/Telegram → Queue → Processing Loop → Synapse Graph → LLM + Tools → Response → Original Channel
+- Data flow: CLI/Signal/Telegram → Queue → Thinking Pipeline → Synapse Graph → LLM + Tools → Response → Original Channel
 - Sentinel triggers: OS Events → Pattern Match → AI Layer (if needed) → CLI/Signal/Telegram notification
 - SSE for streaming responses from backend to CLI client
 - SSE: backend streams via IAsyncEnumerable or Response.WriteAsync with `text/event-stream`. Named event types with JSON payload (`event: <type>\ndata: <json>\n\n`). Terminal event (done/error) required.

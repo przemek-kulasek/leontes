@@ -9,7 +9,7 @@ Without observability, debugging is guesswork. The user asks "Why did you sugges
 ## Prerequisites
 
 - Working feature 65 (Proactive Communication — event delivery)
-- Working feature 65 (Thinking Pipeline — the primary system to observe)
+- Working feature 70 (Thinking Pipeline — the primary system to observe)
 - Working feature 85 (Error Recovery — health checks and degraded mode signals)
 
 ## Rules
@@ -182,10 +182,10 @@ public sealed record ConfidenceBreakdown(
 - `ToolReliability`: Did the selected tool have a history of success? (0 = first use, 1 = always succeeds)
 - `Overall`: Weighted average — `(Memory × 0.25) + (Graph × 0.25) + (Clarity × 0.3) + (Tool × 0.2)`
 
-**Behavioral thresholds:**
-- `Overall > 0.8`: Execute confidently
-- `0.5 ≤ Overall ≤ 0.8`: Execute but flag uncertainty in response ("I think..." / "Based on what I found...")
-- `Overall < 0.5`: Ask for clarification via `RequestPort` before proceeding
+**Behavioral thresholds** (compared against `PersonaOptions.ConfidenceThreshold` from feature 75, default 0.7):
+- `Overall > HighConfidence (0.8)`: Execute confidently
+- `LowConfidence (0.5) ≤ Overall ≤ HighConfidence`: Execute but flag uncertainty in response ("I think..." / "Based on what I found...")
+- `Overall < LowConfidence (0.5)`: Ask for clarification via `RequestPort` before proceeding
 
 #### 4. Telemetry Collector (Infrastructure)
 
