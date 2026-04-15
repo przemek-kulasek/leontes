@@ -1,4 +1,4 @@
-# 60 — Thinking Pipeline
+# 70 — Thinking Pipeline
 
 ## Problem
 
@@ -8,15 +8,16 @@ The current Processing Loop is a linear request-response cycle: receive message 
 
 - Working CLI chat with SSE streaming (feature 10)
 - API key authentication (feature 40)
-- Proactive Communication infrastructure (feature 55) — for RequestPort and WorkflowEvent bridging
+- Proactive Communication infrastructure (feature 65) — for RequestPort and WorkflowEvent bridging
+- Agent Persona & Model Configuration (feature 75) — persona instructions, per-stage model tier and temperature
 
 ## Rules
 
 - Built on `Microsoft.Agents.AI.Workflows` — each cognitive stage is a Workflow Executor, connected by Edges
 - Stages execute serially for a given message to ensure state consistency (Lane Queue principle)
 - The workflow uses `CheckpointManager` to persist state between stages — the pipeline survives server restarts
-- Any stage can pause the workflow via `RequestPort` to ask the user a question (feature 55)
-- Any stage can emit `WorkflowEvent` subclasses for progress/observability (feature 55)
+- Any stage can pause the workflow via `RequestPort` to ask the user a question (feature 65)
+- Any stage can emit `WorkflowEvent` subclasses for progress/observability (feature 65)
 - Stages that have no work to do (e.g., Enrich when memory is empty) must be no-ops, not bottlenecks
 - The pipeline must be extensible — adding a new stage means adding an Executor and an Edge
 
@@ -36,7 +37,7 @@ The Microsoft Agent Framework's Workflow engine provides all of these via `Execu
 ### Dual-Process Theory (Kahneman)
 
 Human cognition operates on two systems:
-- **System 1** (fast, reactive): Pattern matching, reflexes, heuristics — handled by Sentinel (feature 80)
+- **System 1** (fast, reactive): Pattern matching, reflexes, heuristics — handled by Sentinel (feature 90)
 - **System 2** (slow, deliberate): Planning, reasoning, reflection — handled by this pipeline
 
 The Thinking Pipeline is System 2. It only activates when System 1 (Sentinel) escalates a task or when the user explicitly sends a message. This separation prevents expensive LLM calls for tasks that simple heuristics can handle.
@@ -431,7 +432,7 @@ public sealed class ThinkingWorkflowHost(
             await foreach (var evt in run.WatchStreamAsync()
                 .WithCancellation(cancellationToken))
             {
-                // Bridge all events to connected clients (feature 55)
+                // Bridge all events to connected clients (feature 65)
                 await eventBridge.PublishEventAsync(evt, cancellationToken);
 
                 if (evt is WorkflowOutputEvent<ThinkingContext> output)
@@ -515,7 +516,7 @@ When the Plan Executor determines it needs clarification:
 1. PlanExecutor calls context.SendMessageAsync(QuestionRequest)
 2. Framework emits RequestInfoEvent with the question
 3. Framework creates a checkpoint and SUSPENDS the workflow
-4. IWorkflowEventBridge delivers the event to CLI via persistent SSE (feature 55)
+4. IWorkflowEventBridge delivers the event to CLI via persistent SSE (feature 65)
 5. CLI shows: "🤔 Clarification needed: Should I include archived projects?"
 6. User types response → POST /api/v1/stream/respond { requestId, response }
 7. API calls run.SendResponseAsync(response)
@@ -523,7 +524,7 @@ When the Plan Executor determines it needs clarification:
 9. PlanExecutor receives the response and continues
 ```
 
-This is the same `RequestPort` mechanism described in feature 55. The Thinking Pipeline is the primary consumer.
+This is the same `RequestPort` mechanism described in feature 65. The Thinking Pipeline is the primary consumer.
 
 ### Error Handling
 
@@ -545,7 +546,7 @@ The framework wraps each Executor in try/catch and emits `ExecutorFailedEvent` o
 
 ### SSE Event Stream
 
-Events emitted by the pipeline, consumed by the IWorkflowEventBridge (feature 55):
+Events emitted by the pipeline, consumed by the IWorkflowEventBridge (feature 65):
 
 | Source | Event Type | Example |
 |---|---|---|
@@ -556,6 +557,20 @@ Events emitted by the pipeline, consumed by the IWorkflowEventBridge (feature 55
 | Framework | `ExecutorInvokedEvent` | `{executor: "Perceive"}` |
 | Framework | `SuperStepCompletedEvent` | `{stepNumber: 2, checkpointId: "..."}` |
 | Framework | `WorkflowOutputEvent` | Final ThinkingContext |
+
+### Per-Stage Model Tier and Temperature
+
+Each executor receives the appropriate `IChatClient` via keyed DI and applies stage-specific `ChatOptions`. Configuration is defined in feature 75 (Agent Persona & Model Configuration):
+
+| Stage | Model Tier | Temperature | LLM Call |
+|---|---|---|---|
+| Perceive | — | — | No (heuristics only) |
+| Enrich | — | — | No (DB queries only) |
+| Plan | Large | 0.2 | Yes |
+| Execute | Large | 0.5 | Yes (streaming) |
+| Reflect | Small | 0.1 | Optional (insight extraction) |
+
+Executors that call the LLM (Plan, Execute, Reflect) inject `[FromKeyedServices("Large")]` or `[FromKeyedServices("Small")]` and build per-invocation `ChatOptions` from `PersonaOptions.StageSettings`.
 
 ### Configuration
 
@@ -614,9 +629,11 @@ public static IServiceCollection AddThinkingPipeline(this IServiceCollection ser
 - [ ] Existing chat functionality is unchanged — the pipeline is transparent to the user
 - [ ] SSE event bridge receives all workflow events and streams them to connected clients
 - [ ] All Executors log at appropriate levels (Debug for routine, Warning for degraded, Error for failures)
-- [ ] Each stage wraps execution in resilience boundary with degraded fallback (feature 75)
-- [ ] Token usage is metered per stage via ITokenMeter (feature 105)
-- [ ] Each stage emits DecisionRecords for non-trivial choices (feature 85)
+- [ ] Each LLM-calling stage uses the configured model tier (Large/Small) from feature 75
+- [ ] Each LLM-calling stage applies the configured temperature from feature 75
+- [ ] Each stage wraps execution in resilience boundary with degraded fallback (feature 85)
+- [ ] Token usage is metered per stage via ITokenMeter (feature 100)
+- [ ] Each stage emits DecisionRecords for non-trivial choices (feature 95)
 
 ## Out of Scope
 

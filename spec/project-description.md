@@ -12,7 +12,7 @@ Leontes closes all three gaps — an agent that **acts before you ask**, **write
 
 ## Architecture: How Leontes Thinks
 
-### The Cognitive Pipeline (Feature 65)
+### The Cognitive Pipeline (Feature 70)
 
 Every interaction flows through a 5-stage pipeline inspired by Global Workspace Theory (Dehaene) and Dual-Process Theory (Kahneman). Built on Microsoft Agent Framework Workflows (Executor + Edge + CheckpointManager):
 
@@ -24,14 +24,14 @@ Every interaction flows through a 5-stage pipeline inspired by Global Workspace 
 
 Each stage checkpoints its state. If the server crashes mid-pipeline, it resumes from the last completed stage.
 
-### Dual-Process Intelligence (Features 80 + 65)
+### Dual-Process Intelligence (Features 90 + 70)
 
 - **System 1 (Sentinel):** Fast, local, free. Monitors OS events (file downloads, clipboard, calendar, active windows) and applies heuristic filters — regex, frequency analysis, time rules. No LLM calls. Only genuinely surprising events escalate to System 2.
 - **System 2 (Thinking Pipeline):** Slow, deliberate, expensive. The full 5-stage cognitive pipeline with LLM reasoning. Only triggered when System 1 can't handle it alone.
 
 This mirrors Kahneman's model: most OS events are handled by reflexes (System 1). The "conscious mind" (System 2) only activates when something unexpected happens.
 
-### Hierarchical Memory (Feature 70)
+### Hierarchical Memory (Feature 80)
 
 Four memory types modeled on neuroscience, all in PostgreSQL:
 
@@ -46,16 +46,10 @@ Graph-Augmented Retrieval (GraphRAG): "Send this to Sarah" → graph lookup find
 
 ## Core Modules
 
-### M1: The Sentinel (Proactive Engine) — Feature 80
-Monitors OS events without user input: file system, clipboard, calendar, active window. Heuristic filters (System 1) classify and rate-limit events locally. Only surprising events escalate to the LLM (System 2). Delivered via CLI, Signal, or Telegram — channel selection is automatic.
+### M1: Proactive Communication — Feature 65
+Bidirectional: the agent can send notifications, ask mid-task questions, request permissions, and stream progress updates. Built on Agent Framework `RequestPort` (typed HITL channels) and `WorkflowEvent` (progress streaming). Pending requests survive server restarts via `CheckpointManager`.
 
-### M2: Structural Vision — Feature 90
-Windows UI Automation to read application UI as a structured element tree. The agent sees buttons, text fields, and menus as code — not pixels. Privacy exclusions prevent reading password fields or excluded apps.
-
-### M3: Synapse Graph (Knowledge Graph) — Feature 70
-PostgreSQL + pgvector linking People, Files, and Projects. Resolves contextual references: "send this to the lead dev" → person lookup from Git/email history. Recursive CTEs for graph traversal. Vector embeddings for semantic search.
-
-### M4: Channels — Features 10, 50, 60
+### M2: Channels — Features 10, 50, 60
 - **CLI** — terminal on the host machine (SSE streaming)
 - **Signal** — E2E encrypted via signal-cli-rest-api
 - **Telegram** — official Bot API over HTTPS
@@ -63,31 +57,45 @@ PostgreSQL + pgvector linking People, Files, and Projects. Resolves contextual r
 
 All channels share one `IMessagingClient` abstraction and feed into the same Thinking Pipeline.
 
-### M5: Tool Forge (Self-Extending Agent) — Feature 100
-The agent writes, compiles (Roslyn), tests, and registers new tools at runtime. User approval required via `ApprovalRequiredAIFunction`. Tools run in a restricted namespace sandbox. Usage tracked in Synapse Graph; unused tools pruned automatically.
+### M3: Synapse Graph (Knowledge Graph) — Feature 80
+PostgreSQL + pgvector linking People, Files, and Projects. Resolves contextual references: "send this to the lead dev" → person lookup from Git/email history. Recursive CTEs for graph traversal. Vector embeddings for semantic search.
 
-### M6: Proactive Communication — Feature 55
-Bidirectional: the agent can send notifications, ask mid-task questions, request permissions, and stream progress updates. Built on Agent Framework `RequestPort` (typed HITL channels) and `WorkflowEvent` (progress streaming). Pending requests survive server restarts via `CheckpointManager`.
+### M4: The Sentinel (Proactive Engine) — Feature 90
+Monitors OS events without user input: file system, clipboard, calendar, active window. Heuristic filters (System 1) classify and rate-limit events locally. Only surprising events escalate to the LLM (System 2). Delivered via CLI, Signal, or Telegram — channel selection is automatic.
 
-### M7: Observability & Confidence — Feature 85
+### M5: Observability & Confidence — Feature 95
 Every pipeline execution produces a trace: per-stage timing, decision records (what was considered, what was chosen, why), and a confidence score (0–1). The agent signals uncertainty — asks for clarification when confidence is low, proceeds confidently when high. Users can ask "Why did you do that?" and get a trace-based explanation.
 
-### M8: Privacy & Data Governance — Feature 95
+### M6: Structural Vision — Feature 105
+Windows UI Automation to read application UI as a structured element tree. The agent sees buttons, text fields, and menus as code — not pixels. Privacy exclusions prevent reading password fields or excluded apps.
+
+### M7: Tool Forge (Self-Extending Agent) — Feature 115
+The agent writes, compiles (Roslyn), tests, and registers new tools at runtime. User approval required via `ApprovalRequiredAIFunction`. Tools run in a restricted namespace sandbox. Usage tracked in Synapse Graph; unused tools pruned automatically.
+
+### M8: Agent Persona & Model Configuration — Feature 75
+
+Agent personality defined in `persona.md` — identity, tone, boundaries, channel-aware behavior. Two model tiers (Large/Small) registered via keyed DI. Per-stage temperature: Plan 0.2, Execute 0.5, Reflect 0.1. Proactivity level and confidence threshold configurable. Budget-driven model downgrading (Large→Small) when under pressure. Token tracking via `ChatResponse.Usage` from Microsoft.Extensions.AI + `OpenTelemetryAgent` for observability.
+
+### M9: Privacy & Data Governance — Feature 110
+
 All monitoring is opt-in. Users can review, search, and delete any stored data. Topic-based purge ("forget Project X") cascades across all tables. Data export in JSON + Markdown. Sensitive data (credit cards, tokens, IBANs) is never stored in plaintext. Privacy pause mode stops all monitoring instantly.
 
-### M9: Cost Control & Budgets — Feature 105
-Token metering on every LLM call. Daily budgets with per-feature allocations (Chat 60%, Sentinel 15%, Consolidation 15%, Tool Forge 10%). Three-tier throttling: normal → warning → throttled. Model routing: small model for simple tasks, large model for complex reasoning. Background tasks are throttled first; interactive chat is never silently blocked.
+### M10: Cost Control & Budgets — Feature 100
 
-### M10: Error Recovery & Resilience — Feature 75
+Token metering on every LLM call via `ChatResponse.Usage`. Daily budgets with per-feature allocations (Chat 60%, Sentinel 15%, Consolidation 15%, Tool Forge 10%). Three-tier throttling: normal → warning → throttled. Budget-driven model tier downgrading. Background tasks are throttled first; interactive chat is never silently blocked.
+
+### M11: Error Recovery & Resilience — Feature 85
+
 Bounded processing queues with backpressure. Stage-level degradation (memory unavailable → continue with history only). LLM retry with exponential backoff. Context window overflow detection with automatic summarization. Offline mode: Sentinel heuristics, existing tools, and memory retrieval work without the LLM.
 
-### M11: Industry Protocol Standards — Feature 110
+### M12: Industry Protocol Standards — Feature 120
+
 Three agentic protocols, all via Microsoft Agent Framework:
 - **AG-UI** (Agent↔User) — SSE-based, CopilotKit-compatible web frontends
 - **MCP** (Agent↔Tools) — connect to external tool servers (GitHub, filesystem, databases)
 - **A2A** (Agent↔Agent) — delegate tasks to and receive tasks from other AI agents
 
-### M12: Setup Wizard — Feature 30
+### M13: Setup Wizard — Feature 30
 Interactive CLI (`leontes init`) for first-run configuration: spins up PostgreSQL via Docker Compose, configures AI provider + API keys (stored in .NET User Secrets), walks through Signal/Telegram setup, sets Sentinel preferences, generates auth secrets, requests privacy consent.
 
 ## Post-MVP
@@ -105,6 +113,6 @@ Source code is fully public. AGPL enforces this split: commercial users who don'
 
 ## Scope Boundaries
 
-- **MVP:** Cognitive Pipeline, Hierarchical Memory, Sentinel (all 4 inputs), Structural Vision, Synapse Graph, CLI + Signal + Telegram, Tool Forge, Proactive Communication, Observability, Privacy Controls, Cost Management, Error Recovery, Setup Wizard.
+- **MVP:** Cognitive Pipeline, Agent Persona & Model Config, Hierarchical Memory, Sentinel (all 4 inputs), Structural Vision, Synapse Graph, CLI + Signal + Telegram, Tool Forge, Proactive Communication, Observability, Privacy Controls, Cost Management, Error Recovery, Setup Wizard.
 - **Post-MVP:** Ghost Overlay, voice, web dashboard, Vault (sandboxed execution), AG-UI/A2A/MCP protocol endpoints.
 - **Out of scope:** Multi-user, macOS/Linux Structural Vision, multi-provider load balancing.

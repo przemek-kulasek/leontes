@@ -1,4 +1,4 @@
-# 95 — Privacy & Data Governance
+# 110 — Privacy & Data Governance
 
 ## Problem
 
@@ -8,9 +8,9 @@ Even in a single-user, local-only deployment, privacy matters. The user may shar
 
 ## Prerequisites
 
-- Working feature 55 (Proactive Communication — for consent prompts)
+- Working feature 65 (Proactive Communication — for consent prompts)
 - Working feature 70 (Hierarchical Memory — the primary data store to govern)
-- Working feature 80 (Sentinel Intelligence — the primary data collector to govern)
+- Working feature 90 (Sentinel Intelligence — the primary data collector to govern)
 
 ## Rules
 
@@ -18,7 +18,7 @@ Even in a single-user, local-only deployment, privacy matters. The user may shar
 - No data collection starts before explicit user consent during first run
 - The user can review, search, and delete any data the agent has stored — no hidden state
 - Clipboard content and file contents are never stored in plaintext in the database — store hashed fingerprints or redacted summaries
-- Window titles from applications on the privacy exclusion list (feature 90) are never logged, even as metadata
+- Window titles from applications on the privacy exclusion list (feature 105) are never logged, even as metadata
 - Data retention limits are enforced automatically — expired data is hard-deleted, not soft-deleted
 - Export format must be human-readable (JSON + Markdown) and machine-parseable
 - All privacy settings are stored in the database and can be changed at any time — not baked into configuration files
@@ -40,14 +40,14 @@ Not all data is equal. Some is transient and harmless (e.g., "user switched to V
 | Category | Source | Sensitivity | Default Retention |
 |---|---|---|---|
 | Conversation messages | CLI, Signal, Telegram | Medium | Indefinite (user data) |
-| Conversation summaries | Context Manager (feature 75) | Low | Indefinite |
-| Episodic memories | Reflect stage (feature 65) | Medium | 90 days |
+| Conversation summaries | Context Manager (feature 85) | Low | Indefinite |
+| Episodic memories | Reflect stage (feature 70) | Medium | 90 days |
 | Semantic graph entities | Reflect stage | Low | Indefinite |
 | Semantic graph relationships | Reflect stage | Low | Indefinite |
-| Sentinel events (processed) | Monitors (feature 80) | High | 7 days |
+| Sentinel events (processed) | Monitors (feature 90) | High | 7 days |
 | Sentinel raw data (clipboard, etc.) | Monitors | Critical | Never stored in raw form |
-| Forged tool source code | Tool Forge (feature 100) | Low | Indefinite (user-approved) |
-| Pipeline traces | Telemetry (feature 85) | Medium | 30 days |
+| Forged tool source code | Tool Forge (feature 115) | Low | Indefinite (user-approved) |
+| Pipeline traces | Telemetry (feature 95) | Medium | 30 days |
 | Decision records | Telemetry | Medium | 30 days |
 | Aggregated metrics | Telemetry | Low | Indefinite |
 | Window titles | Active Window Monitor | High | Never stored (except allowed apps) |

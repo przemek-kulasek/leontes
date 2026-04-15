@@ -1,4 +1,4 @@
-# 80 — Sentinel Intelligence
+# 90 — Sentinel Intelligence
 
 ## Problem
 
@@ -7,7 +7,7 @@ The Sentinel service exists as a stub — interfaces are defined (`IFileSystemWa
 ## Prerequisites
 
 - Working API with Processing Loop (feature 10)
-- Thinking Pipeline (feature 65) — Sentinel events feed into the pipeline's Perceive stage
+- Thinking Pipeline (feature 70) — Sentinel events feed into the pipeline's Perceive stage
 - Signal support (feature 50) — notifications can be delivered via Signal
 
 ## Rules
@@ -64,7 +64,7 @@ OS Events (file system, clipboard, calendar, active window)
 [Rate Limiter] — max 1 escalation/monitor/minute
     |  rate-limited events
     v
-[Event Queue] — bounded in-memory channel (feature 75)
+[Event Queue] — bounded in-memory channel (feature 85)
     |
     v
 [SentinelService] — dequeues and forwards to API
@@ -266,7 +266,7 @@ Monitors default to disabled where they require additional setup (Calendar needs
 
 ### Notification Delivery (via Proactive Communication — Feature 55)
 
-Sentinel notifications and alerts use the Proactive Communication infrastructure (feature 55). The SentinelService emits events through the `IWorkflowEventBridge` rather than managing channel selection directly:
+Sentinel notifications and alerts use the Proactive Communication infrastructure (feature 65). The SentinelService emits events through the `IWorkflowEventBridge` rather than managing channel selection directly:
 
 ```csharp
 // In SentinelService — after heuristic filter matches
@@ -278,7 +278,7 @@ await eventBridge.PublishEventAsync(
     cancellationToken);
 ```
 
-For Sentinel events that need user input (e.g., "You copied an IBAN — want me to find the last invoice?"), the Sentinel escalates to the Thinking Pipeline which uses a `RequestPort` (feature 55) to pause and wait for the user's response:
+For Sentinel events that need user input (e.g., "You copied an IBAN — want me to find the last invoice?"), the Sentinel escalates to the Thinking Pipeline which uses a `RequestPort` (feature 65) to pause and wait for the user's response:
 
 ```csharp
 // In the Thinking Pipeline, after Sentinel escalation
@@ -300,7 +300,7 @@ Channel selection (CLI SSE, Signal, Telegram, queued) is handled by the `IWorkfl
 | Heuristic filter throws | Log error, discard event, continue processing |
 | Rate limit exceeded | Discard event silently, log at Debug level |
 | API unreachable | Queue event for retry (max 3 attempts), then discard with Warning log |
-| Event queue full (backpressure) | Drop event, log at Warning level — see feature 75 for queue depth limits |
+| Event queue full (backpressure) | Drop event, log at Warning level — see feature 85 for queue depth limits |
 | Monitor can't access OS resource (permissions) | Log error once, disable monitor, alert user on next CLI session |
 
 ### Security & Privacy
@@ -327,7 +327,7 @@ Channel selection (CLI SSE, Signal, Telegram, queued) is handled by the `IWorkfl
 ## Out of Scope
 
 - Calendar monitor implementation (requires Outlook COM interop or Microsoft Graph API — deferred)
-- Active window monitor implementation (requires UI Automation setup — deferred, see feature 90)
+- Active window monitor implementation (requires UI Automation setup — deferred, see feature 105)
 - Machine learning–based anomaly detection (frequency model is heuristic, not learned)
 - Cross-machine Sentinel (monitors local OS only)
 - Custom user-defined heuristic rules (configuration is developer-managed for now)

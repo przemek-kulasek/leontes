@@ -1,4 +1,4 @@
-# 70 — Hierarchical Memory
+# 80 — Hierarchical Memory
 
 ## Problem
 
@@ -7,7 +7,7 @@ The assistant currently has no memory beyond the active conversation. Each sessi
 ## Prerequisites
 
 - Working CLI chat (feature 10)
-- Thinking Pipeline implemented (feature 65) — memory is consumed in the Enrich stage and written in the Reflect stage
+- Thinking Pipeline implemented (feature 70) — memory is consumed in the Enrich stage and written in the Reflect stage
 
 ## Rules
 
@@ -28,7 +28,7 @@ The assistant currently has no memory beyond the active conversation. Each sessi
 | Working Memory | Prefrontal Cortex | Current conversation context | Context window — last N messages from the active conversation |
 | Episodic Memory | Hippocampus | Specific events and experiences | Vector-indexed entries from past conversations ("yesterday we discussed Q3 budget") |
 | Semantic Memory | Temporal Lobe | Facts and relationships | Synapse Graph — entities and relationships (`(Sarah)-[WORKS_ON]->(Project X)`) |
-| Procedural Memory | Cerebellum | Learned skills and patterns | Tool Forge skill catalog (feature 100) — stored tool definitions and usage patterns |
+| Procedural Memory | Cerebellum | Learned skills and patterns | Tool Forge skill catalog (feature 115) — stored tool definitions and usage patterns |
 
 ### Graph-Augmented Retrieval (GraphRAG)
 
@@ -330,7 +330,7 @@ Authorization: Bearer {token}
 
 ### Pipeline Integration
 
-**Enrich Stage** (from feature 65) queries all memory types:
+**Enrich Stage** (from feature 70) queries all memory types:
 
 ```csharp
 public sealed class EnrichStage(

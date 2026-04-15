@@ -1,4 +1,4 @@
-# 75 — Error Recovery & Resilience
+# 85 — Error Recovery & Resilience
 
 ## Problem
 
@@ -9,7 +9,7 @@ Without a resilience strategy, a single transient failure can leave the agent st
 ## Prerequisites
 
 - Working feature 10 (CLI Chat)
-- Working feature 55 (Proactive Communication — for failure notifications)
+- Working feature 65 (Proactive Communication — for failure notifications)
 - Working feature 65 (Thinking Pipeline — the primary system to protect)
 
 ## Rules
@@ -17,7 +17,7 @@ Without a resilience strategy, a single transient failure can leave the agent st
 - Every external call (LLM, database, HTTP) must have an explicit timeout — no unbounded waits
 - Pipeline failures must never lose user input — the original message is always recoverable
 - Degraded mode must still provide value — if the LLM is down, Sentinel heuristics and local tools still function
-- No silent failures — every error the user should know about is surfaced via the proactive communication channel (feature 55)
+- No silent failures — every error the user should know about is surfaced via the proactive communication channel (feature 65)
 - Backpressure is mandatory for all unbounded queues — define depth limits and overflow behavior
 - Checkpoint-based recovery is the primary mechanism — leverage Agent Framework `CheckpointManager` from feature 65
 - `AddStandardResilienceHandler()` is the baseline for HTTP clients — this spec defines the layer above that
@@ -80,7 +80,7 @@ User Message
               │
               ▼
 ┌─────────────────────────────────────────────────┐
-│          Thinking Pipeline (feature 65)          │
+│          Thinking Pipeline (feature 70)          │
 │  Perceive → Enrich → Plan → Execute → Reflect   │
 │       ▲              │                           │
 │       │         [checkpoint after each stage]    │
@@ -132,7 +132,7 @@ public sealed class ProcessingQueue
 
 #### 2. Pipeline Stage Recovery (Infrastructure)
 
-Each Executor in the Thinking Pipeline (feature 65) wraps its core logic in a recovery boundary. The framework's `CheckpointManager` provides the persistence layer.
+Each Executor in the Thinking Pipeline (feature 70) wraps its core logic in a recovery boundary. The framework's `CheckpointManager` provides the persistence layer.
 
 ```csharp
 // Pattern for every Executor
@@ -203,7 +203,7 @@ public interface IResilientLlmClient
 - Auth errors (401, 403): fail immediately, notify user
 - Context too long (400 with token error): trigger context compression (see below), retry once
 
-**Provider failover:** If the primary provider (configured via `AiProvider:Provider`) fails 3 consecutive times within 5 minutes, the system enters degraded mode and notifies the user via feature 55. It does not silently switch providers — the user must configure a fallback provider explicitly.
+**Provider failover:** If the primary provider (configured via `AiProvider:Provider`) fails 3 consecutive times within 5 minutes, the system enters degraded mode and notifies the user via feature 65. It does not silently switch providers — the user must configure a fallback provider explicitly.
 
 #### 4. Context Window Manager (Application)
 
@@ -246,7 +246,7 @@ public sealed record RequestPortOptions
 | Request Type | On Timeout | Rationale |
 |---|---|---|
 | Question (clarification) | Proceed with best guess, note uncertainty in response | Don't block on optional clarification |
-| Tool approval (feature 100) | Deny by default, checkpoint state for later resume | Security: never auto-approve code execution |
+| Tool approval (feature 115) | Deny by default, checkpoint state for later resume | Security: never auto-approve code execution |
 | Sentinel alert | Dismiss, log as unacknowledged | Low-priority; user will see it next session |
 | Permission request | Deny by default | Security: explicit consent required |
 
@@ -279,7 +279,7 @@ public sealed record DeliveryResult(
 | Signal | 2 | 5s, 15s | Queue + CLI notification |
 | Telegram | 2 | 5s, 15s | Queue + CLI notification |
 
-**Offline queue:** When no channel is connected, messages are written to the `ProactiveEvents` table (feature 55) with `DeliveryStatus = Pending`. On next CLI connection, pending events are delivered in order.
+**Offline queue:** When no channel is connected, messages are written to the `ProactiveEvents` table (feature 65) with `DeliveryStatus = Pending`. On next CLI connection, pending events are delivered in order.
 
 #### 7. Health & Readiness Probes (Api)
 

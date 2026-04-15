@@ -45,7 +45,7 @@ The result: your agent notices when you copy an IBAN and asks if you want to fin
 | **Self-Extending** | Writes, compiles, tests, and registers new tools at runtime via Roslyn. You approve before anything runs |
 | **Confidence Scoring** | Signals how certain it is (0–1). Asks for clarification when uncertain, proceeds confidently when sure |
 | **Show Your Work** | Every decision is traced. Ask "Why did you do that?" and get a real answer from stored pipeline traces |
-| **Cost Aware** | Token budgets per feature, automatic model routing (small model for simple tasks, large for complex), throttling before you hit limits |
+| **Cost Aware** | Token budgets per feature, two model tiers (Large for reasoning, Small for summarization), budget-driven downgrading, throttling before you hit limits |
 | **Privacy First** | All monitoring is opt-in. Review, export, or delete any stored data. "Forget Project X" cascades across all tables |
 | **Multi-Channel** | CLI + Signal (E2E encrypted) + Telegram. Same brain, same memory, any device |
 | **Protocol Standards** | AG-UI (web frontends), MCP (external tool servers), A2A (agent-to-agent) — all via Microsoft Agent Framework |
@@ -363,25 +363,28 @@ GitHub Actions: restore, build, test on push to `main`, `develop`, `feature/*`. 
 
 ## Feature Roadmap
 
+Ordered by implementation sequence:
+
 | # | Feature | Status |
 |---|---|---|
 | 10 | CLI Chat | ✅ Implemented |
-| 20 | Conversation Memory | ✅ Implemented (superseded by 70) |
+| 20 | Conversation Memory | ✅ Implemented (superseded by 80) |
 | 30 | PoC / Setup Wizard | ✅ Implemented |
 | 40 | API Authentication | ✅ Implemented |
 | 50 | Signal Support | ✅ Implemented |
-| 55 | Proactive Communication | 📋 Specified |
 | 60 | Telegram Support | ✅ Implemented |
-| 65 | Thinking Pipeline | 📋 Specified |
-| 70 | Hierarchical Memory | 📋 Specified |
-| 75 | Error Recovery & Resilience | 📋 Specified |
-| 80 | Sentinel Intelligence | 📋 Specified |
-| 85 | Observability & Cognitive Telemetry | 📋 Specified |
-| 90 | Structural Vision | 📋 Specified |
-| 95 | Privacy & Data Governance | 📋 Specified |
-| 100 | Tool Forge | 📋 Specified |
-| 105 | Cost Control & Budget Management | 📋 Specified |
-| 110 | Industry Protocol Standards (AG-UI, MCP, A2A) | 📋 Specified |
+| 65 | Proactive Communication | 📋 Specified |
+| 70 | Thinking Pipeline | 📋 Specified |
+| 75 | Agent Persona & Model Configuration | 📋 Specified |
+| 80 | Hierarchical Memory | 📋 Specified |
+| 85 | Error Recovery & Resilience | 📋 Specified |
+| 90 | Sentinel Intelligence | 📋 Specified |
+| 95 | Observability & Cognitive Telemetry | 📋 Specified |
+| 100 | Cost Control & Budget Management | 📋 Specified |
+| 105 | Structural Vision | 📋 Specified |
+| 110 | Privacy & Data Governance | 📋 Specified |
+| 115 | Tool Forge | 📋 Specified |
+| 120 | Industry Protocol Standards (AG-UI, MCP, A2A) | 📋 Specified |
 
 ## Status
 

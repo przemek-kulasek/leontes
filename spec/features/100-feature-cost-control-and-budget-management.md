@@ -1,15 +1,15 @@
-# 105 — Cost Control & Budget Management
+# 100 — Cost Control & Budget Management
 
 ## Problem
 
-Leontes makes LLM calls from multiple subsystems: the Thinking Pipeline (feature 65) calls the LLM in both Plan and Execute stages, memory consolidation (feature 70) calls the LLM hourly to distill observations into insights, Sentinel escalation (feature 80) sends surprising events to the LLM for interpretation, and Tool Forge (feature 100) calls the LLM to generate and fix code. Each of these runs independently with no shared awareness of total spend.
+Leontes makes LLM calls from multiple subsystems: the Thinking Pipeline (feature 70) calls the LLM in both Plan and Execute stages, memory consolidation (feature 80) calls the LLM hourly to distill observations into insights, Sentinel escalation (feature 90) sends surprising events to the LLM for interpretation, and Tool Forge (feature 115) calls the LLM to generate and fix code. Each of these runs independently with no shared awareness of total spend.
 
 Without cost control, a busy day — many conversations, frequent Sentinel events, and a Tool Forge generation cycle — can consume thousands of tokens with no visibility or brakes. Even with a free local model (Ollama), token throughput is finite and shared across features. With a cloud provider, the cost is real money. A world-class assistant manages its own resource consumption, prioritizes interactive requests over background tasks, and tells the user when it's running hot.
 
 ## Prerequisites
 
 - Working feature 65 (Thinking Pipeline — token tracking per stage)
-- Working feature 85 (Observability — token metrics collection and storage)
+- Working feature 95 (Observability — token metrics collection and storage)
 
 ## Rules
 
@@ -88,7 +88,7 @@ Budgets are tracked in rolling 24-hour windows. This prevents "saving up" unused
 
 #### 1. Token Meter (Infrastructure)
 
-Wraps every LLM client call to capture token usage before and after.
+Implemented as an `IChatClient` decorator using the Microsoft.Extensions.AI middleware pattern. Every `IChatClient` call flows through the meter, which reads token usage from `ChatResponse.Usage` (provided by M.E.AI) and records it.
 
 ```csharp
 public interface ITokenMeter
@@ -97,14 +97,7 @@ public interface ITokenMeter
         string feature,
         string operation,
         Func<CancellationToken, Task<T>> llmCall,
-        CancellationToken ct)
-        where T : ITokenUsageProvider;
-}
-
-public interface ITokenUsageProvider
-{
-    int InputTokens { get; }
-    int OutputTokens { get; }
+        CancellationToken ct);
 }
 
 public sealed record MeteredResponse<T>(
@@ -120,7 +113,11 @@ public sealed record TokenUsage(
     DateTime Timestamp);
 ```
 
-**Integration:** The `IResilientLlmClient` (feature 75) calls `ITokenMeter` internally. No LLM call bypasses metering.
+**How token counts are obtained:** `Microsoft.Extensions.AI` provides `ChatResponse.Usage` with `InputTokenCount`, `OutputTokenCount`, and `TotalTokenCount` on every response. For streaming via `GetStreamingResponseAsync()`, the final `ChatResponseUpdate` contains a `UsageContent` in its `Contents` collection. No custom token counting needed — the provider reports actual usage.
+
+**Observability layer:** Wrapping `ChatClientAgent` with the Agent Framework's `OpenTelemetryAgent` decorator automatically records token counts as OpenTelemetry span attributes and metrics. This provides the observability layer (dashboards, alerting) while `ITokenMeter` provides the synchronous budget enforcement layer.
+
+**Integration:** The `IResilientLlmClient` (feature 85) calls `ITokenMeter` internally. No LLM call bypasses metering.
 
 #### 2. Token Ledger (Infrastructure)
 
@@ -213,7 +210,7 @@ public sealed record ThrottleDecision(
 | **Exhausted** (≥ 100%, hard stop on) | Deny with explanation | Deny |
 | **Exhausted** (≥ 100%, hard stop off) | Proceed with strong warning | Deny |
 
-**Notifications:** At Warning and Throttled thresholds, the system emits a `BudgetWarningEvent` via the proactive communication channel (feature 55). The message includes current usage, remaining budget, and which features are consuming the most.
+**Notifications:** At Warning and Throttled thresholds, the system emits a `BudgetWarningEvent` via the proactive communication channel (feature 65). The message includes current usage, remaining budget, and which features are consuming the most.
 
 #### 5. Model Router (Infrastructure)
 
@@ -246,27 +243,25 @@ public enum ModelTier
 }
 ```
 
+**Relationship to feature 75 (Agent Persona & Model Configuration):** Feature 75 defines the static per-stage model tier assignment (Plan → Large, Reflect → Small, etc.) and registers two keyed `IChatClient` instances. The `IModelRouter` here is the budget-aware layer on top: it can override a stage's preferred tier when the budget is stressed.
+
 **Routing rules:**
-1. If budget state is Normal → use preferred tier
+1. If budget state is Normal → use preferred tier (from feature 75 stage config)
 2. If budget state is Warning → downgrade background tasks to Small tier
 3. If budget state is Throttled → downgrade all tasks to Small tier
 4. User-facing chat is never downgraded without notification — the user sees "Using a faster model to conserve budget"
 
-**Model configuration:**
+**Model configuration** is defined in `AiProvider:Models` (feature 75). Cost-specific fields are added here:
 
 ```json
 {
   "CostControl": {
-    "Models": {
+    "ModelCosts": {
       "Large": {
-        "Provider": "ollama",
-        "ModelId": "llama3.1:70b",
         "InputTokenCost": 0,
         "OutputTokenCost": 0
       },
       "Small": {
-        "Provider": "ollama",
-        "ModelId": "llama3.1:8b",
         "InputTokenCost": 0,
         "OutputTokenCost": 0
       }
@@ -370,7 +365,7 @@ CREATE TABLE "BudgetPolicies" (
 
 ### Token Usage Retention
 
-Raw `TokenUsageRecords` older than 90 days are aggregated into `MetricsSummaries` (feature 85) and then deleted. Aggregated data is kept indefinitely for trend analysis.
+Raw `TokenUsageRecords` older than 90 days are aggregated into `MetricsSummaries` (feature 95) and then deleted. Aggregated data is kept indefinitely for trend analysis.
 
 ### Migration
 
@@ -422,7 +417,7 @@ dotnet ef migrations add AddCostControlTables \
 | Budget database unreachable | Allow all calls (fail-open), log error, notify user |
 | Feature allocation doesn't sum to 100% | Normalize proportionally at load time |
 | Unknown feature name in LLM call | Record under "Other", log warning |
-| Model router can't reach preferred model | Fall back to available model, record in decision log (feature 85) |
+| Model router can't reach preferred model | Fall back to available model, record in decision log (feature 95) |
 
 ## Acceptance Criteria
 

@@ -1,4 +1,4 @@
-# 100 — Tool Forge
+# 115 — Tool Forge
 
 ## Problem
 
@@ -7,19 +7,19 @@ The assistant's capabilities are fixed at compile time. When it encounters a tas
 ## Prerequisites
 
 - Working API with tool-calling support via Microsoft.Agents.AI (feature 30)
-- Hierarchical Memory with Synapse Graph (feature 70) — tools are tracked as entities, usage is recorded for pruning
-- Thinking Pipeline (feature 65) — tool generation is triggered in the Execute stage
+- Hierarchical Memory with Synapse Graph (feature 80) — tools are tracked as entities, usage is recorded for pruning
+- Thinking Pipeline (feature 70) — tool generation is triggered in the Execute stage
 
 ## Rules
 
 - Dynamic code compilation uses `Microsoft.CodeAnalysis.CSharp` (Roslyn) — approved and version-pinned
 - User approval uses `ApprovalRequiredAIFunction` from `Microsoft.Agents.AI.Workflows` — no custom approval flow
-- No code runs without explicit user approval — the assistant proposes the tool, the user reviews and approves via the Proactive Communication channel (feature 55)
+- No code runs without explicit user approval — the assistant proposes the tool, the user reviews and approves via the Proactive Communication channel (feature 65)
 - Tool code runs in a restricted Roslyn scripting environment with a namespace allowlist — no file system access, no network access, no reflection unless explicitly allowed
 - Tools are pure functions: input → output. No side effects, no state mutation, no database access
 - Each tool must have a unit test written by the agent and verified before approval
 - Tool metadata (name, description, parameters) must be clear and human-readable
-- Unused tools are pruned automatically — tracked via Synapse Graph (feature 70)
+- Unused tools are pruned automatically — tracked via Synapse Graph (feature 80)
 - Maximum tool code size: 500 lines (if it's bigger, it's not a tool — it's a feature)
 - Tools are persisted as source code in the database, not as compiled assemblies
 
@@ -78,7 +78,7 @@ Agent detects capability gap
     |  fail → LLM fixes code (max 3 attempts)
     v
 [Present to User] — ApprovalRequiredAIFunction wraps the tool,
-    |                emits ToolApprovalRequestContent via RequestInfoEvent (feature 55)
+    |                emits ToolApprovalRequestContent via RequestInfoEvent (feature 65)
     |  rejected → discard
     v
 [Register in Catalog] — store source code + metadata in DB
@@ -92,7 +92,7 @@ Agent detects capability gap
 
 #### Tool Approval via Agent Framework
 
-User approval for newly forged tools leverages `ApprovalRequiredAIFunction` from `Microsoft.Agents.AI.Workflows`. This wraps any `AIFunction` so that the first time it's called, it emits a `ToolApprovalRequestContent` inside a `RequestInfoEvent`. The Proactive Communication infrastructure (feature 55) delivers this to the user via whichever channel is active.
+User approval for newly forged tools leverages `ApprovalRequiredAIFunction` from `Microsoft.Agents.AI.Workflows`. This wraps any `AIFunction` so that the first time it's called, it emits a `ToolApprovalRequestContent` inside a `RequestInfoEvent`. The Proactive Communication infrastructure (feature 65) delivers this to the user via whichever channel is active.
 
 ```csharp
 // Wrapping a forged tool for approval
@@ -101,14 +101,14 @@ var approvalWrapped = new ApprovalRequiredAIFunction(forgedFunction);
 
 // When the agent calls this tool:
 // 1. Framework emits RequestInfoEvent with ToolApprovalRequestContent
-// 2. IWorkflowEventBridge delivers to CLI/Signal/Telegram (feature 55)
+// 2. IWorkflowEventBridge delivers to CLI/Signal/Telegram (feature 65)
 // 3. User sees: tool name, description, arguments, source code
 // 4. User approves/rejects via POST /api/v1/stream/respond
 // 5. On approve: tool executes and result returns to agent
 // 6. On reject: agent receives rejection, tries alternative approach
 ```
 
-This replaces a custom approval flow — the framework handles correlation, timeout, and checkpoint persistence of pending approvals. Approval timeout defaults to 30 minutes with deny-by-default behavior — see feature 75 (Error Recovery & Resilience) for the `RequestPortOptions` configuration and timeout semantics.
+This replaces a custom approval flow — the framework handles correlation, timeout, and checkpoint persistence of pending approvals. Approval timeout defaults to 30 minutes with deny-by-default behavior — see feature 85 (Error Recovery & Resilience) for the `RequestPortOptions` configuration and timeout semantics.
 
 ### Data Model
 
@@ -463,7 +463,7 @@ This allows the memory system to suggest relevant tools based on context — "yo
 - [ ] Agent detects capability gap and proposes a new tool with source code and test
 - [ ] Roslyn compiles tool code with namespace allowlist enforcement
 - [ ] Auto-generated unit test runs and passes before tool is presented for approval
-- [ ] User can review source code, test results, and approve/reject via `ApprovalRequiredAIFunction` → `RequestInfoEvent` → Proactive Communication (feature 55)
+- [ ] User can review source code, test results, and approve/reject via `ApprovalRequiredAIFunction` → `RequestInfoEvent` → Proactive Communication (feature 65)
 - [ ] Approved tools are callable by the agent during normal conversation
 - [ ] Tool usage is tracked in the database (usage count, last used timestamp)
 - [ ] Tools unused for 30+ days are automatically pruned (soft delete)

@@ -1,4 +1,4 @@
-# 110 — Industry Protocol Standards
+# 120 — Industry Protocol Standards
 
 ## Problem
 
@@ -13,8 +13,8 @@ Three open protocols have emerged as the industry standard for agent interoperab
 
 ## Prerequisites
 
-- Working API with Thinking Pipeline (feature 65)
-- Proactive Communication with RequestPort and WorkflowEvents (feature 55)
+- Working API with Thinking Pipeline (feature 70)
+- Proactive Communication with RequestPort and WorkflowEvents (feature 65)
 - Tool-calling support via Microsoft.Agents.AI (feature 30)
 
 ## Rules
@@ -175,7 +175,7 @@ This is optional — the raw HTTP endpoint remains for backward compatibility. B
 
 - Connect to any MCP server to gain its tools (GitHub, filesystem, databases, Slack, etc.)
 - No custom tool code needed — tools are discovered and invoked via the MCP protocol
-- Tool Forge (feature 100) creates tools locally; MCP provides external tools
+- Tool Forge (feature 115) creates tools locally; MCP provides external tools
 - Combined catalog: forged tools + MCP tools, all available to the agent
 
 #### Implementation

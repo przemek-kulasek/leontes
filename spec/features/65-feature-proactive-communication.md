@@ -1,4 +1,4 @@
-# 55 — Proactive Communication
+# 65 — Proactive Communication
 
 ## Problem
 
@@ -506,7 +506,7 @@ For questions via Signal/Telegram: user replies with option text ("Approve"), br
 
 ### How Executors Use Proactive Communication
 
-Any executor in the Thinking Pipeline (feature 65) can use these patterns:
+Any executor in the Thinking Pipeline (feature 70) can use these patterns:
 
 ```csharp
 // Emit progress (fire-and-forget, no response needed)

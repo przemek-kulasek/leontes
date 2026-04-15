@@ -1,4 +1,4 @@
-# 90 — Structural Vision
+# 105 — Structural Vision
 
 ## Problem
 
@@ -6,8 +6,8 @@ The assistant has no way to perceive what the user is looking at on screen. With
 
 ## Prerequisites
 
-- Working Sentinel infrastructure (feature 80) — Active Window Monitor provides window focus context
-- Thinking Pipeline (feature 65) — Vision data feeds into the Perceive stage
+- Working Sentinel infrastructure (feature 90) — Active Window Monitor provides window focus context
+- Thinking Pipeline (feature 70) — Vision data feeds into the Perceive stage
 
 ## Rules
 
@@ -264,7 +264,7 @@ Example output:
 Vision data is added to `ThinkingContext`:
 
 ```csharp
-// In ThinkingContext (feature 65)
+// In ThinkingContext (feature 70)
 public string? ScreenState { get; set; }
 ```
 

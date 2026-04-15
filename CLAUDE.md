@@ -118,10 +118,13 @@ Global ExceptionHandler (ExceptionHandler.cs implementing IExceptionHandler) ret
 
 ### AI / Agents
 
-- Microsoft.Agents.AI, tools as classes in Infrastructure/
-- Tools must be deterministic and side-effect-free where possible. Tool metadata (name, description) must be clear and human-readable.
+- Microsoft.Agents.AI + Microsoft.Agents.AI.Workflows for cognitive pipeline
+- Tools as classes in Infrastructure/. Tool metadata (name, description) must be clear and human-readable.
 - Single agent by default, split only when domains are clearly separate
-- Provider configurable (AiProvider:Provider), Ollama for dev, cloud for prod
+- Two model tiers: Large (Plan, Execute) and Small (Reflect, Consolidation, Sentinel). Registered as keyed `IChatClient` via `[FromKeyedServices("Large")]` / `[FromKeyedServices("Small")]`
+- Provider configurable (AiProvider:Models:Large/Small), Ollama for dev, cloud for prod
+- Agent personality defined in `persona.md` — loaded at startup as system instructions. Per-stage temperature configured via `Persona:StageSettings`
+- Token tracking: `ChatResponse.Usage` from Microsoft.Extensions.AI provides InputTokenCount/OutputTokenCount. `OpenTelemetryAgent` wrapper for observability. Custom `ITokenMeter` decorator for budget enforcement.
 
 ### Sentinel (Proactive Engine)
 

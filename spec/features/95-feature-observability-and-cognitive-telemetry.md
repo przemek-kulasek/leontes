@@ -1,16 +1,16 @@
-# 85 — Observability & Cognitive Telemetry
+# 95 — Observability & Cognitive Telemetry
 
 ## Problem
 
-Leontes runs a 5-stage cognitive pipeline (feature 65), retrieves memories across four types (feature 70), monitors OS events through multiple Sentinel channels (feature 80), and generates tools at runtime (feature 100). When something goes wrong — or when the agent makes a surprising decision — the user has no way to understand why.
+Leontes runs a 5-stage cognitive pipeline (feature 70), retrieves memories across four types (feature 80), monitors OS events through multiple Sentinel channels (feature 90), and generates tools at runtime (feature 115). When something goes wrong — or when the agent makes a surprising decision — the user has no way to understand why.
 
 Without observability, debugging is guesswork. The user asks "Why did you suggest that?" and the agent can only say "Based on the conversation" rather than "I found 3 matching memories, tool X bid highest, and your Synapse Graph linked Sarah to Project Alpha." A world-class assistant must show its work — not as a research paper, but as a clear trace of what it considered, what it chose, and why.
 
 ## Prerequisites
 
-- Working feature 55 (Proactive Communication — event delivery)
+- Working feature 65 (Proactive Communication — event delivery)
 - Working feature 65 (Thinking Pipeline — the primary system to observe)
-- Working feature 75 (Error Recovery — health checks and degraded mode signals)
+- Working feature 85 (Error Recovery — health checks and degraded mode signals)
 
 ## Rules
 
@@ -19,7 +19,7 @@ Without observability, debugging is guesswork. The user asks "Why did you sugges
 - Sensitive data (clipboard content, passwords, file contents) must never appear in telemetry — use hashes or redacted placeholders
 - Telemetry is local-only — never sent to external services unless the user explicitly configures an exporter
 - Pipeline traces are stored in PostgreSQL, not in-memory — they survive restarts
-- Token usage is tracked per request, per stage, and per feature — this feeds into feature 105 (Cost Control)
+- Token usage is tracked per request, per stage, and per feature — this feeds into feature 100 (Cost Control)
 - Every decision point in the pipeline must emit a structured `DecisionRecord` explaining what was considered and what was chosen
 
 ## Background
@@ -213,7 +213,7 @@ public interface ITelemetryCollector
 }
 ```
 
-**Implementation:** The collector listens to `WorkflowEvent` subclasses emitted by each Executor (feature 65). It correlates events by `RequestId` and writes batch inserts to minimize database overhead.
+**Implementation:** The collector listens to `WorkflowEvent` subclasses emitted by each Executor (feature 70). It correlates events by `RequestId` and writes batch inserts to minimize database overhead.
 
 #### 5. Metrics Aggregation (Infrastructure)
 
@@ -251,7 +251,7 @@ GET  /api/v1/telemetry/traces                  → PagedResponse<PipelineTraceSu
 GET  /api/v1/telemetry/decisions/{requestId}   → List<DecisionRecord> (all decisions for a request)
 GET  /api/v1/telemetry/metrics/summary         → MetricsSummary (current period)
 GET  /api/v1/telemetry/metrics/history         → PagedResponse<MetricsSummary> (historical)
-GET  /api/v1/telemetry/health                  → ComponentHealthReport (from feature 75)
+GET  /api/v1/telemetry/health                  → ComponentHealthReport (from feature 85)
 ```
 
 **CLI integration:** `leontes trace <requestId>` renders the pipeline trace in a human-readable format. `leontes metrics` shows the current period summary.
@@ -426,5 +426,5 @@ dotnet ef migrations add AddObservabilityTables \
 
 - External telemetry exporters (OpenTelemetry, Datadog, Grafana) — future enhancement
 - Visual dashboard (web UI for traces) — covered by AG-UI in feature 110
-- Real-time streaming of telemetry events — use SSE events from feature 55
+- Real-time streaming of telemetry events — use SSE events from feature 65
 - A/B testing of different pipeline configurations

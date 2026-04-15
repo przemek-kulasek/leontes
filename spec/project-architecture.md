@@ -20,7 +20,9 @@ Three executable projects running on the user's PC, sharing one AI engine and on
 | Structural Vision | Leontes.Worker | Windows UI Automation | Read/interact with application UI as element tree |
 | CLI | Leontes.Cli | dotnet tool | PC interaction — chat, setup wizard |
 | Knowledge Graph | Shared (Infrastructure) | PostgreSQL 17 + pgvector | Entities, relationships, semantic search, tool usage tracking |
-| AI Layer | Shared (Infrastructure) | Microsoft.Agents.AI | LLM orchestration, tool dispatch |
+| AI Layer | Shared (Infrastructure) | Microsoft.Agents.AI | LLM orchestration, tool dispatch, two model tiers (Large/Small) via keyed DI |
+| Agent Persona | Shared (Configuration) | persona.md + PersonaOptions | Identity, behavior, boundaries, per-stage temperature |
+| Token Metering | Shared (Infrastructure) | M.E.AI UsageDetails + OpenTelemetryAgent | Per-call token tracking, budget enforcement |
 | Tool Forge | Shared (Infrastructure) | Roslyn + code gen | Agent writes tool classes → compile → test → register |
 
 ## Data Flow
@@ -66,7 +68,10 @@ Single-user. API key or JWT for CLI ↔ Api. Signal via bot registration.
 | Processing Loop in Api, not Worker | Processing Loop handles HTTP requests from CLI and returns SSE streams — must live where Kestrel lives |
 | Worker as Windows Service | Sentinel needs OS-level access (file system, clipboard, active window). Must persist across user sessions. |
 | CLI as dotnet tool | Installed globally, invoked as `leontes` from anywhere. No backend project references — HTTP only. |
-| PostgreSQL for graph + vectors | One database for entities, relationships, pgvector search |
+| PostgreSQL for graph + vectors | One database for entities, relationships, pgvector search. Mature .NET/EF Core support via Pgvector.EntityFrameworkCore. SQLite evaluated and rejected — no NuGet package for sqlite-vec, no EF Core vector integration, pre-1.0 maturity. |
+| Two model tiers (Large/Small) | Static per-stage assignment via keyed DI. Plan + Execute → Large; Reflect + Consolidation + Sentinel → Small. No intelligent routing — stage determines tier. Budget-driven downgrading (Large→Small) when budget is stressed. |
+| Persona file (persona.md) | Agent personality, tone, boundaries defined in Markdown. Loaded at startup as system instructions. Per-stage temperature configured separately. |
+| Token tracking via M.E.AI | ChatResponse.Usage provides InputTokenCount/OutputTokenCount. OpenTelemetryAgent wrapper for observability. Custom ITokenMeter decorator for budget enforcement. |
 | Windows UI Automation over screenshots | Structural, fast, cheap — no vision API calls |
 | Signal for mobile | E2E encrypted, no custom mobile app needed |
 | Telegram for mobile | Official Bot API, no SIM card needed, easier setup |
