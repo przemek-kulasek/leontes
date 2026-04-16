@@ -18,6 +18,15 @@ public sealed class ConversationConfiguration : IEntityTypeConfiguration<Convers
         builder.Property(c => c.LastMessageAt)
             .IsRequired();
 
+        builder.Property(c => c.InitiatedBy)
+            .IsRequired()
+            .HasConversion<string>()
+            .HasDefaultValue(Domain.Enums.MessageInitiator.User);
+
+        builder.Property(c => c.IsProactive)
+            .IsRequired()
+            .HasDefaultValue(false);
+
         builder.HasIndex(c => c.LastMessageAt);
 
         builder.HasMany(c => c.Messages)

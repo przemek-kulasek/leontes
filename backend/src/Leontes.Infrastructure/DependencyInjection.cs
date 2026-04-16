@@ -1,10 +1,12 @@
 using Leontes.Application;
 using Leontes.Application.Chat;
 using Leontes.Application.Messaging;
+using Leontes.Application.ProactiveCommunication;
 using Leontes.Infrastructure.AI;
 using Leontes.Infrastructure.AI.Tools;
 using Leontes.Infrastructure.Data;
 using Leontes.Infrastructure.Data.Interceptors;
+using Leontes.Infrastructure.ProactiveCommunication;
 using Leontes.Infrastructure.Signal;
 using Leontes.Infrastructure.Telegram;
 using Microsoft.Agents.AI;
@@ -41,6 +43,7 @@ public static class DependencyInjection
         AddAiServices(services, configuration);
         AddSignalServices(services, configuration);
         AddTelegramServices(services, configuration);
+        AddProactiveCommunicationServices(services, configuration);
 
         return services;
     }
@@ -81,6 +84,21 @@ public static class DependencyInjection
         .AddStandardResilienceHandler();
 
         services.AddSingleton<IMessagingClient>(sp => sp.GetRequiredService<SignalRestClient>());
+    }
+
+    private static void AddProactiveCommunicationServices(
+        IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.Configure<ProactiveCommunicationOptions>(
+            configuration.GetSection(ProactiveCommunicationOptions.SectionName));
+
+        services.AddSingleton<WorkflowEventBridge>();
+        services.AddSingleton<IWorkflowEventBridge>(sp =>
+            sp.GetRequiredService<WorkflowEventBridge>());
+
+        services.AddSingleton<IWorkflowSessionManager, WorkflowSessionManager>();
+        services.AddScoped<IProactiveEventStore, ProactiveEventStore>();
     }
 
     private static void AddTelegramServices(IServiceCollection services, IConfiguration configuration)

@@ -8,6 +8,7 @@ public sealed class Message : Entity
     public required string Content { get; set; }
     public required MessageChannel Channel { get; init; }
     public bool IsComplete { get; set; } = true;
+    public MessageInitiator Initiator { get; set; } = MessageInitiator.User;
 
     public Guid ConversationId { get; init; }
 

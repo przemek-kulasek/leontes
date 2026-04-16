@@ -9,9 +9,11 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
 {
     public DbSet<Conversation> ConversationSet => Set<Conversation>();
     public DbSet<Message> MessageSet => Set<Message>();
+    public DbSet<StoredProactiveEvent> StoredProactiveEventSet => Set<StoredProactiveEvent>();
 
     IQueryable<Conversation> IApplicationDbContext.Conversations => ConversationSet;
     IQueryable<Message> IApplicationDbContext.Messages => MessageSet;
+    IQueryable<StoredProactiveEvent> IApplicationDbContext.StoredProactiveEvents => StoredProactiveEventSet;
 
     void IApplicationDbContext.Add<TEntity>(TEntity entity) => base.Add(entity);
 
