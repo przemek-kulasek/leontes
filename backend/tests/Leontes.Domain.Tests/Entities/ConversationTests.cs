@@ -1,4 +1,5 @@
 using Leontes.Domain.Entities;
+using Leontes.Domain.Enums;
 
 namespace Leontes.Domain.Tests.Entities;
 
@@ -34,5 +35,44 @@ public class ConversationTests
 
         Assert.NotNull(conversation.Messages);
         Assert.Empty(conversation.Messages);
+    }
+
+    [Fact]
+    public void InitiatedBy_DefaultsToUser()
+    {
+        var conversation = new Conversation
+        {
+            Title = "Test",
+            LastMessageAt = DateTime.UtcNow
+        };
+
+        Assert.Equal(MessageInitiator.User, conversation.InitiatedBy);
+    }
+
+    [Fact]
+    public void IsProactive_DefaultsToFalse()
+    {
+        var conversation = new Conversation
+        {
+            Title = "Test",
+            LastMessageAt = DateTime.UtcNow
+        };
+
+        Assert.False(conversation.IsProactive);
+    }
+
+    [Fact]
+    public void ProactiveConversation_CanBeCreated()
+    {
+        var conversation = new Conversation
+        {
+            Title = "Sentinel Alert",
+            LastMessageAt = DateTime.UtcNow,
+            InitiatedBy = MessageInitiator.Sentinel,
+            IsProactive = true
+        };
+
+        Assert.Equal(MessageInitiator.Sentinel, conversation.InitiatedBy);
+        Assert.True(conversation.IsProactive);
     }
 }

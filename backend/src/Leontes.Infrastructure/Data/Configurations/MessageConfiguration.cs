@@ -27,6 +27,11 @@ public sealed class MessageConfiguration : IEntityTypeConfiguration<Message>
             .IsRequired()
             .HasDefaultValue(true);
 
+        builder.Property(m => m.Initiator)
+            .IsRequired()
+            .HasConversion<string>()
+            .HasDefaultValue(Domain.Enums.MessageInitiator.User);
+
         builder.HasIndex(m => m.ConversationId);
     }
 }

@@ -55,4 +55,33 @@ public class MessageTests
 
         Assert.False(message.IsComplete);
     }
+
+    [Fact]
+    public void Initiator_DefaultsToUser()
+    {
+        var message = new Message
+        {
+            Role = MessageRole.User,
+            Content = "Hello",
+            Channel = MessageChannel.Cli,
+            ConversationId = Guid.NewGuid()
+        };
+
+        Assert.Equal(MessageInitiator.User, message.Initiator);
+    }
+
+    [Fact]
+    public void Initiator_CanBeSetToAssistant()
+    {
+        var message = new Message
+        {
+            Role = MessageRole.Assistant,
+            Content = "Proactive notification",
+            Channel = MessageChannel.Cli,
+            ConversationId = Guid.NewGuid(),
+            Initiator = MessageInitiator.Assistant
+        };
+
+        Assert.Equal(MessageInitiator.Assistant, message.Initiator);
+    }
 }

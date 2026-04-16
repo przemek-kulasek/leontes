@@ -11,6 +11,7 @@ public static class EndpointExtensions
             .RequireAuthorization();
 
         api.MapChatEndpoints();
+        api.MapStreamEndpoints();
 
         return app;
     }
