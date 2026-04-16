@@ -1,8 +1,12 @@
 using Leontes.Application;
 using Leontes.Application.Chat;
+using Leontes.Application.Configuration;
 using Leontes.Application.Messaging;
 using Leontes.Application.ProactiveCommunication;
+using Leontes.Application.ThinkingPipeline;
 using Leontes.Infrastructure.AI;
+using Leontes.Infrastructure.AI.ThinkingPipeline;
+using Leontes.Infrastructure.AI.ThinkingPipeline.Executors;
 using Leontes.Infrastructure.AI.Tools;
 using Leontes.Infrastructure.Data;
 using Leontes.Infrastructure.Data.Interceptors;
@@ -10,10 +14,13 @@ using Leontes.Infrastructure.ProactiveCommunication;
 using Leontes.Infrastructure.Signal;
 using Leontes.Infrastructure.Telegram;
 using Microsoft.Agents.AI;
+using Microsoft.Agents.AI.Workflows;
+using Microsoft.Agents.AI.Workflows.Checkpointing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using OllamaSharp;
 
 namespace Leontes.Infrastructure;
@@ -41,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped<ApplicationDbContextInitializer>();
 
         AddAiServices(services, configuration);
+        AddThinkingPipeline(services, configuration);
         AddSignalServices(services, configuration);
         AddTelegramServices(services, configuration);
         AddProactiveCommunicationServices(services, configuration);
@@ -50,26 +58,98 @@ public static class DependencyInjection
 
     private static void AddAiServices(IServiceCollection services, IConfiguration configuration)
     {
-        var provider = configuration["AiProvider:Provider"] ?? "Ollama";
-        var endpoint = configuration["AiProvider:Endpoint"] ?? "http://localhost:11434";
-        var model = configuration["AiProvider:Model"] ?? "qwen2.5:7b";
+        services.Configure<PersonaOptions>(configuration.GetSection(PersonaOptions.SectionName));
+        services.Configure<AiProviderOptions>(configuration.GetSection(AiProviderOptions.SectionName));
 
-        services.AddSingleton<IChatClient>(_ => provider.ToLowerInvariant() switch
-        {
-            "ollama" => new OllamaApiClient(new Uri(endpoint), model),
-            _ => throw new InvalidOperationException(
-                $"Unsupported AI provider '{provider}'. Supported values: Ollama.")
-        });
+        var modelsSection = configuration.GetSection("AiProvider:Models");
+
+        // Keyed IChatClient instances: Large and Small
+        services.AddKeyedSingleton<IChatClient>("Large", (_, _) =>
+            CreateChatClient(modelsSection.GetSection("Large"), configuration));
+
+        services.AddKeyedSingleton<IChatClient>("Small", (_, _) =>
+            CreateChatClient(modelsSection.GetSection("Small"), configuration));
+
+        // Default (unkeyed) resolves to Large for backwards compatibility
+        services.AddSingleton<IChatClient>(sp =>
+            sp.GetRequiredKeyedService<IChatClient>("Large"));
+
+        // Load persona instructions from the output directory (CopyToOutputDirectory)
+        var personaFile = configuration["Persona:InstructionsFile"] ?? "persona.md";
+        var personaPath = Path.Combine(AppContext.BaseDirectory, personaFile);
+        var instructions = File.Exists(personaPath)
+            ? File.ReadAllText(personaPath)
+            : "You are Leontes, a helpful personal AI assistant. Be concise and accurate.";
+
+        services.AddSingleton(new PersonaInstructions(instructions));
 
         services.AddSingleton<AIAgent>(sp =>
             new ChatClientAgent(
-                sp.GetRequiredService<IChatClient>(),
-                instructions: "You are Leontes, a helpful personal AI assistant. Be concise and accurate. Use available tools when they can help answer the user's question.",
+                sp.GetRequiredKeyedService<IChatClient>("Large"),
+                instructions: sp.GetRequiredService<PersonaInstructions>().Instructions,
                 name: "Leontes",
                 tools: [AIFunctionFactory.Create(CurrentDateTimeTool.GetCurrentDateTime)],
-                loggerFactory: sp.GetService<Microsoft.Extensions.Logging.ILoggerFactory>()));
+                loggerFactory: sp.GetService<ILoggerFactory>()));
 
         services.AddScoped<IChatService, ChatService>();
+    }
+
+    private static IChatClient CreateChatClient(IConfigurationSection modelSection, IConfiguration root)
+    {
+        var provider = modelSection["Provider"]
+            ?? root["AiProvider:Provider"]
+            ?? "Ollama";
+        var endpoint = modelSection["Endpoint"]
+            ?? root["AiProvider:Endpoint"]
+            ?? "http://localhost:11434";
+        var modelId = modelSection["ModelId"]
+            ?? root["AiProvider:Model"]
+            ?? "qwen2.5:7b";
+
+        return provider.ToLowerInvariant() switch
+        {
+            "ollama" => new OllamaApiClient(new Uri(endpoint), modelId),
+            _ => throw new InvalidOperationException(
+                $"Unsupported AI provider '{provider}'. Supported values: Ollama.")
+        };
+    }
+
+    private static void AddThinkingPipeline(IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<ThinkingPipelineOptions>(
+            configuration.GetSection(ThinkingPipelineOptions.SectionName));
+
+        // Stub implementations (replaced when real features are built)
+        services.AddSingleton<IMemoryStore, NullMemoryStore>();
+        services.AddSingleton<ISynapseGraph, NullSynapseGraph>();
+        services.AddSingleton<ITokenMeter, NullTokenMeter>();
+        services.AddSingleton<IDecisionRecorder, NullDecisionRecorder>();
+
+        // Checkpoint store (in-memory for now)
+        services.AddSingleton<JsonCheckpointStore, InMemoryCheckpointStore>();
+        services.AddSingleton(sp =>
+            CheckpointManager.CreateJson(sp.GetRequiredService<JsonCheckpointStore>()));
+
+        // Executors
+        services.AddSingleton<PerceiveExecutor>();
+        services.AddSingleton<EnrichExecutor>();
+        services.AddSingleton<PlanExecutor>();
+        services.AddSingleton<PlanResumeExecutor>();
+        services.AddSingleton<ExecuteExecutor>();
+        services.AddSingleton<ReflectExecutor>();
+
+        // Workflow definition
+        services.AddSingleton<Workflow>(sp =>
+            ThinkingWorkflowDefinition.Build(
+                sp.GetRequiredService<PerceiveExecutor>(),
+                sp.GetRequiredService<EnrichExecutor>(),
+                sp.GetRequiredService<PlanExecutor>(),
+                sp.GetRequiredService<PlanResumeExecutor>(),
+                sp.GetRequiredService<ExecuteExecutor>(),
+                sp.GetRequiredService<ReflectExecutor>()));
+
+        // Workflow host
+        services.AddSingleton<ThinkingWorkflowHost>();
     }
 
     private static void AddSignalServices(IServiceCollection services, IConfiguration configuration)

@@ -1,9 +1,13 @@
 using System.Runtime.CompilerServices;
 using Leontes.Application;
 using Leontes.Application.Chat;
+using Leontes.Application.ProactiveCommunication;
+using Leontes.Application.ProactiveCommunication.Events;
 using Leontes.Domain.Entities;
 using Leontes.Domain.Enums;
-using Microsoft.Agents.AI;
+using Leontes.Domain.ThinkingPipeline;
+using Leontes.Infrastructure.AI.ThinkingPipeline;
+using Microsoft.Agents.AI.Workflows;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -11,7 +15,8 @@ using Microsoft.Extensions.Logging;
 namespace Leontes.Infrastructure.AI;
 
 public sealed class ChatService(
-    AIAgent _agent,
+    ThinkingWorkflowHost _workflowHost,
+    IWorkflowEventBridge _eventBridge,
     IApplicationDbContext _db,
     IServiceScopeFactory _scopeFactory,
     ILogger<ChatService> _logger) : IChatService
@@ -68,40 +73,81 @@ public sealed class ChatService(
             .AsNoTracking()
             .Where(m => m.ConversationId == conversationId && m.Role == MessageRole.User)
             .OrderByDescending(m => m.Created)
-            .Select(m => new { m.Content, m.Channel })
+            .Select(m => new { m.Id, m.Content, m.Channel })
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new Domain.Exceptions.NotFoundException("No user message found for conversation.");
 
-        _logger.LogDebug("Streaming AI response for conversation {ConversationId}", conversationId);
+        _logger.LogDebug("Starting thinking pipeline for conversation {ConversationId}", conversationId);
 
-        var responseBuilder = new System.Text.StringBuilder();
-
-        await foreach (var update in _agent.RunStreamingAsync(lastUserMsg.Content, cancellationToken: cancellationToken))
+        // Build the ThinkingContext from the user message
+        var thinkingContext = new ThinkingContext
         {
-            var text = update.Text;
-            if (!string.IsNullOrEmpty(text))
-            {
-                responseBuilder.Append(text);
-                yield return text;
-            }
-        }
-
-        var assistantMessage = new Message
-        {
-            Id = Guid.NewGuid(),
-            Role = MessageRole.Assistant,
-            Content = responseBuilder.ToString(),
-            Channel = lastUserMsg.Channel,
+            MessageId = lastUserMsg.Id,
             ConversationId = conversationId,
-            IsComplete = true
+            UserContent = lastUserMsg.Content,
+            Channel = lastUserMsg.Channel.ToString()
         };
 
-        using var scope = _scopeFactory.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
-        db.Add(assistantMessage);
-        await db.SaveChangesAsync(CancellationToken.None);
+        // Register a client to capture token events from the pipeline.
+        // The event bridge uses a bounded channel — UnregisterClient completes
+        // the channel writer, which causes ReadEventsAsync to finish naturally.
+        var clientId = $"chat-{conversationId}-{Guid.NewGuid():N}";
+        _eventBridge.RegisterClient(clientId);
 
-        _logger.LogInformation("Assistant message {MessageId} saved to conversation {ConversationId}", assistantMessage.Id, conversationId);
+        ThinkingContext? result = null;
+
+        try
+        {
+            // Start the pipeline in the background. When it finishes (success
+            // or failure) it will have published all events; we then unregister
+            // the client so ReadEventsAsync drains the remaining buffered events
+            // and completes — no race, no lost tokens.
+            var pipelineTask = _workflowHost.ProcessAsync(thinkingContext, cancellationToken)
+                .ContinueWith(t =>
+                {
+                    _eventBridge.UnregisterClient(clientId);
+                    return t;
+                }, TaskScheduler.Default).Unwrap();
+
+            // Stream tokens as they arrive — the channel will close when the
+            // pipeline finishes and UnregisterClient completes the writer.
+            await foreach (var evt in _eventBridge.ReadEventsAsync(clientId, cancellationToken))
+            {
+                if (evt is TokenStreamEvent tokenEvt)
+                {
+                    yield return tokenEvt.Text;
+                }
+            }
+
+            // Pipeline already finished; await to propagate exceptions
+            result = await pipelineTask;
+
+            // Save the assistant message
+            var assistantMessage = new Message
+            {
+                Id = Guid.NewGuid(),
+                Role = MessageRole.Assistant,
+                Content = result.Response ?? string.Empty,
+                Channel = lastUserMsg.Channel,
+                ConversationId = conversationId,
+                IsComplete = result.IsComplete
+            };
+
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
+            db.Add(assistantMessage);
+            await db.SaveChangesAsync(CancellationToken.None);
+
+            _logger.LogInformation(
+                "Assistant message {MessageId} saved to conversation {ConversationId}",
+                assistantMessage.Id, conversationId);
+        }
+        finally
+        {
+            // Safety net: if ReadEventsAsync threw before the pipeline finished,
+            // ensure the client is always cleaned up.
+            _eventBridge.UnregisterClient(clientId);
+        }
     }
 
     public async Task<IReadOnlyList<ChatMessageDto>> GetMessagesAsync(

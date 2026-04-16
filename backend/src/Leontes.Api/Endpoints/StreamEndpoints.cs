@@ -2,6 +2,7 @@ using System.Text.Json;
 using Leontes.Application.ProactiveCommunication;
 using Leontes.Application.ProactiveCommunication.Events;
 using Microsoft.Agents.AI.Workflows;
+using NotificationEvent = Leontes.Application.ProactiveCommunication.Events.NotificationEvent;
 using Microsoft.Extensions.Options;
 
 namespace Leontes.Api.Endpoints;
@@ -156,9 +157,9 @@ public static class StreamEndpoints
                 "progress", pp),
             InsightEvent i when i.Data is InsightPayload ip => FormatSseEvent(
                 "insight", ip),
-            AgentResponseUpdateEvent u => FormatSseEvent("token", new
+            TokenStreamEvent t => FormatSseEvent("token", new
             {
-                text = u.Data
+                text = t.Text
             }),
             SuperStepCompletedEvent s => FormatSseEvent("checkpoint", new
             {

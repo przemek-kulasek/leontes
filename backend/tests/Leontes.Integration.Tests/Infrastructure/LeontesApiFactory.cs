@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Testcontainers.PostgreSql;
 
 namespace Leontes.Integration.Tests.Infrastructure;
@@ -38,20 +39,17 @@ public sealed class LeontesApiFactory : WebApplicationFactory<Program>, IAsyncLi
                 opt.UseNpgsql(_postgres.GetConnectionString());
             });
 
-            var chatClientDescriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(IChatClient) && !d.IsKeyedService);
+            // Replace all IChatClient registrations (keyed and non-keyed)
+            // so pipeline executors using [FromKeyedServices("Large"/"Small")]
+            // get the test client instead of a real Ollama connection.
+            var testClient = new TestChatClient();
 
-            if (chatClientDescriptor is not null)
-                services.Remove(chatClientDescriptor);
+            services.RemoveAll<IChatClient>();
+            services.AddKeyedSingleton<IChatClient>("Large", testClient);
+            services.AddKeyedSingleton<IChatClient>("Small", testClient);
+            services.AddSingleton<IChatClient>(testClient);
 
-            services.AddSingleton<IChatClient>(new TestChatClient());
-
-            var agentDescriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(AIAgent));
-
-            if (agentDescriptor is not null)
-                services.Remove(agentDescriptor);
-
+            services.RemoveAll<AIAgent>();
             services.AddSingleton<AIAgent>(sp => new ChatClientAgent(
                 sp.GetRequiredService<IChatClient>(),
                 instructions: "You are a test assistant.",
