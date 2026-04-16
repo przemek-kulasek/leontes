@@ -27,7 +27,7 @@ public sealed class WorkflowEventBridge(ILogger<WorkflowEventBridge> logger) : I
         var channel = Channel.CreateBounded<WorkflowEvent>(
             new BoundedChannelOptions(256)
             {
-                FullMode = BoundedChannelFullMode.DropOldest,
+                FullMode = BoundedChannelFullMode.Wait,
                 SingleReader = true,
                 SingleWriter = false
             });

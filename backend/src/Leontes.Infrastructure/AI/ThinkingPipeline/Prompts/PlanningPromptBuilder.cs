@@ -15,9 +15,7 @@ internal static class PlanningPromptBuilder
         // Include conversation history for multi-turn context
         foreach (var historyMsg in context.ConversationHistory)
         {
-            var role = historyMsg.Role.Equals("assistant", StringComparison.OrdinalIgnoreCase)
-                ? ChatRole.Assistant
-                : ChatRole.User;
+            var role = MapRole(historyMsg.Role);
             messages.Add(new ChatMessage(role, historyMsg.Content));
         }
 
@@ -25,6 +23,13 @@ internal static class PlanningPromptBuilder
 
         return messages;
     }
+
+    private static ChatRole MapRole(string role) => role.ToLowerInvariant() switch
+    {
+        "assistant" => ChatRole.Assistant,
+        "system" => ChatRole.System,
+        _ => ChatRole.User
+    };
 
     private static string BuildSystemPrompt(string personaInstructions)
     {
