@@ -1,6 +1,4 @@
 using System.Threading.RateLimiting;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Leontes.Api.Extensions;
 

@@ -1,6 +1,3 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Routing;
-
 namespace Leontes.Api.Endpoints;
 
 public static class EndpointExtensions

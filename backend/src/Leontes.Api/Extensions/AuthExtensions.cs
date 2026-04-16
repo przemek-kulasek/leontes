@@ -1,7 +1,5 @@
 using Leontes.Api.Auth;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Leontes.Api.Extensions;
 

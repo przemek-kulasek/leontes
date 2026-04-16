@@ -1,7 +1,3 @@
-using Leontes.Infrastructure.Data;
-using Leontes.Infrastructure.Data.Interceptors;
-using Microsoft.EntityFrameworkCore;
-
 namespace Leontes.Infrastructure.Tests;
 
 public sealed class AuditInterceptorTests

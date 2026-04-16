@@ -2,11 +2,6 @@ using System.Text.Json;
 using Leontes.Application.ProactiveCommunication;
 using Leontes.Application.ProactiveCommunication.Events;
 using Microsoft.Agents.AI.Workflows;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Leontes.Api.Endpoints;

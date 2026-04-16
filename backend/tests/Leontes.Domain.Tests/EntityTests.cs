@@ -1,5 +1,3 @@
-using Leontes.Domain;
-
 namespace Leontes.Domain.Tests;
 
 public sealed class EntityTests

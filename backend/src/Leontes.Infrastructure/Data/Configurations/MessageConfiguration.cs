@@ -1,5 +1,4 @@
 using Leontes.Domain.Entities;
-using Leontes.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
