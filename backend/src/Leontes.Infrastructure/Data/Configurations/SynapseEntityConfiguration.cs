@@ -25,9 +25,6 @@ public sealed class SynapseEntityConfiguration : IEntityTypeConfiguration<Synaps
             .IsRequired()
             .HasConversion<string>();
 
-        builder.Property(e => e.Description)
-            .HasMaxLength(1000);
-
         builder.Property(e => e.Embedding)
             .HasColumnType(FormattableString.Invariant($"vector({MemoryOptions.EmbeddingDimensions})"));
 
@@ -38,8 +35,8 @@ public sealed class SynapseEntityConfiguration : IEntityTypeConfiguration<Synaps
                 v => JsonSerializer.Deserialize<Dictionary<string, string>>(v, JsonOptions)
                      ?? new Dictionary<string, string>(),
                 new ValueComparer<Dictionary<string, string>>(
-                    (a, b) => a!.SequenceEqual(b!),
-                    d => d.Aggregate(0, (hash, pair) => HashCode.Combine(hash, pair.Key, pair.Value)),
+                    (a, b) => a!.Count == b!.Count && !a.Except(b).Any(),
+                    d => d.Aggregate(0, (hash, pair) => hash ^ HashCode.Combine(pair.Key, pair.Value)),
                     d => d.ToDictionary(p => p.Key, p => p.Value)))
             .IsRequired();
 

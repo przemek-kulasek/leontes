@@ -1,5 +1,6 @@
 using Leontes.Application.ThinkingPipeline;
 using Leontes.Domain.Enums;
+using Leontes.Domain.Exceptions;
 
 namespace Leontes.Api.Endpoints;
 
@@ -25,11 +26,10 @@ public static class SynapseEndpoints
         CancellationToken cancellationToken = default)
     {
         if (depth < 1 || depth > 5)
-            throw new Leontes.Domain.Exceptions.ValidationException("'depth' must be between 1 and 5.");
+            throw new ValidationException("'depth' must be between 1 and 5.");
 
         var entity = await synapseGraph.GetEntityAsync(entityId, cancellationToken)
-            ?? throw new Leontes.Domain.Exceptions.NotFoundException(
-                $"Synapse entity {entityId} was not found.");
+            ?? throw new NotFoundException($"Synapse entity {entityId} was not found.");
 
         var related = await synapseGraph.FindRelatedEntitiesAsync(entityId, depth, cancellationToken);
 

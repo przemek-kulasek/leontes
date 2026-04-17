@@ -1,4 +1,5 @@
 using Leontes.Application.ThinkingPipeline;
+using Leontes.Domain.Exceptions;
 
 namespace Leontes.Api.Endpoints;
 
@@ -23,10 +24,10 @@ public static class MemoryEndpoints
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(q))
-            throw new Leontes.Domain.Exceptions.ValidationException("Query parameter 'q' is required.");
+            throw new ValidationException("Query parameter 'q' is required.");
 
         if (limit <= 0 || limit > 100)
-            throw new Leontes.Domain.Exceptions.ValidationException("'limit' must be between 1 and 100.");
+            throw new ValidationException("'limit' must be between 1 and 100.");
 
         var results = await memoryStore.SearchAsync(q, limit, cancellationToken);
         return Results.Ok(results);

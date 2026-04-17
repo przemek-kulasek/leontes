@@ -1,3 +1,4 @@
+using Leontes.Application.ThinkingPipeline;
 using Leontes.Infrastructure.Data;
 using Microsoft.Agents.AI;
 using Microsoft.AspNetCore.Hosting;
@@ -48,6 +49,9 @@ public sealed class LeontesApiFactory : WebApplicationFactory<Program>, IAsyncLi
             services.AddKeyedSingleton<IChatClient>("Large", testClient);
             services.AddKeyedSingleton<IChatClient>("Small", testClient);
             services.AddSingleton<IChatClient>(testClient);
+
+            services.RemoveAll<IEmbeddingService>();
+            services.AddSingleton<IEmbeddingService, FakeEmbeddingService>();
 
             services.RemoveAll<AIAgent>();
             services.AddSingleton<AIAgent>(sp => new ChatClientAgent(

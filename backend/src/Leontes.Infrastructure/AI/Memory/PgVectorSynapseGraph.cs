@@ -24,9 +24,10 @@ internal sealed class PgVectorSynapseGraph(
         using var scope = scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
 
+        var normalized = mention.ToLower();
         var entity = await db.SynapseEntities
             .AsNoTracking()
-            .Where(e => EF.Functions.ILike(e.Name, mention))
+            .Where(e => e.Name.ToLower() == normalized)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (entity is not null)
@@ -48,9 +49,10 @@ internal sealed class PgVectorSynapseGraph(
         using var scope = scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
 
+        var normalized = name.ToLower();
         return await db.SynapseEntities
             .AsNoTracking()
-            .Where(e => EF.Functions.ILike(e.Name, name))
+            .Where(e => e.Name.ToLower() == normalized)
             .FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -76,33 +78,31 @@ internal sealed class PgVectorSynapseGraph(
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
         const string sql = """
-            WITH RECURSIVE graph AS (
-                SELECT r."TargetEntityId" AS id, r."RelationType" AS relation_type, 1 AS depth
-                FROM "SynapseRelationships" r
-                WHERE r."SourceEntityId" = {0}
-
-                UNION
-
-                SELECT r."SourceEntityId" AS id, r."RelationType" AS relation_type, 1 AS depth
-                FROM "SynapseRelationships" r
-                WHERE r."TargetEntityId" = {0}
+            WITH RECURSIVE edges AS (
+                SELECT "SourceEntityId" AS a, "TargetEntityId" AS b, "RelationType"
+                FROM "SynapseRelationships"
+                UNION ALL
+                SELECT "TargetEntityId" AS a, "SourceEntityId" AS b, "RelationType"
+                FROM "SynapseRelationships"
+            ),
+            graph AS (
+                SELECT e.b AS id, e."RelationType" AS relation_type, 1 AS depth
+                FROM edges e
+                WHERE e.a = {0}
 
                 UNION ALL
 
-                SELECT r."TargetEntityId" AS id, r."RelationType" AS relation_type, g.depth + 1
-                FROM "SynapseRelationships" r
-                INNER JOIN graph g ON r."SourceEntityId" = g.id
-                WHERE g.depth < {1} AND r."TargetEntityId" <> {0}
-
-                UNION
-
-                SELECT r."SourceEntityId" AS id, r."RelationType" AS relation_type, g.depth + 1
-                FROM "SynapseRelationships" r
-                INNER JOIN graph g ON r."TargetEntityId" = g.id
-                WHERE g.depth < {1} AND r."SourceEntityId" <> {0}
+                SELECT e.b, e."RelationType", g.depth + 1
+                FROM edges e
+                INNER JOIN graph g ON e.a = g.id
+                WHERE g.depth < {1} AND e.b <> {0}
             )
             SELECT DISTINCT ON (e."Id")
-                e."Id", e."Name", e."EntityType", g.relation_type, g.depth
+                e."Id" AS "Id",
+                e."Name" AS "Name",
+                e."EntityType" AS "EntityType",
+                g.relation_type AS "RelationType",
+                g.depth AS "Depth"
             FROM graph g
             INNER JOIN "SynapseEntities" e ON e."Id" = g.id
             WHERE e."Id" <> {0}

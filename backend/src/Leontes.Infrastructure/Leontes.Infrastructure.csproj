@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Leontes.Infrastructure.Tests" />
+    <InternalsVisibleTo Include="Leontes.Integration.Tests" />
   </ItemGroup>
 
   <ItemGroup>

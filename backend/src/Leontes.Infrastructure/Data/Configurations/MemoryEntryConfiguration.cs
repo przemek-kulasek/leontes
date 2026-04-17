@@ -28,10 +28,6 @@ public sealed class MemoryEntryConfiguration : IEntityTypeConfiguration<MemoryEn
             .IsRequired()
             .HasDefaultValue(0.5f);
 
-        builder.Property(m => m.AccessCount)
-            .IsRequired()
-            .HasDefaultValue(0);
-
         builder.HasIndex(m => m.Type);
         builder.HasIndex(m => m.SourceConversationId);
 

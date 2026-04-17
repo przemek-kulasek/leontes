@@ -11,6 +11,4 @@ public sealed class MemoryEntry : Entity
     public Guid? SourceMessageId { get; set; }
     public Guid? SourceConversationId { get; set; }
     public float Importance { get; set; } = 0.5f;
-    public DateTime? LastAccessedAt { get; set; }
-    public int AccessCount { get; set; }
 }
