@@ -135,8 +135,11 @@ internal sealed class PgVectorSynapseGraph(
         using var scope = scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
+        var normalized = name.ToLower();
         var existing = await db.SynapseEntitySet
-            .FirstOrDefaultAsync(e => e.EntityType == type && e.Name == name, cancellationToken);
+            .FirstOrDefaultAsync(
+                e => e.EntityType == type && e.Name.ToLower() == normalized,
+                cancellationToken);
 
         if (existing is not null)
         {

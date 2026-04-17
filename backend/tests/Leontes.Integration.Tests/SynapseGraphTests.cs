@@ -87,6 +87,20 @@ public sealed class SynapseGraphTests(LeontesApiFactory factory) : IClassFixture
     }
 
     [Fact]
+    public async Task UpsertEntityAsync_DifferentCasing_ReturnsExistingEntity()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        using var scope = _factory.Services.CreateScope();
+        var graph = scope.ServiceProvider.GetRequiredService<ISynapseGraph>();
+
+        var name = NewName("Upsert");
+        var first = await graph.UpsertEntityAsync(name, SynapseEntityType.Person, null, ct);
+        var second = await graph.UpsertEntityAsync(name.ToUpper(), SynapseEntityType.Person, null, ct);
+
+        Assert.Equal(first.Id, second.Id);
+    }
+
+    [Fact]
     public async Task AddRelationshipAsync_Duplicate_IsNoOp()
     {
         var ct = TestContext.Current.CancellationToken;
