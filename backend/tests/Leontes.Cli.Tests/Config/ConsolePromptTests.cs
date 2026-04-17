@@ -62,27 +62,36 @@ public sealed class ConsolePromptTests
     }
 
     [Fact]
-    public void AskWithDefault_ParameterlessOverload_UsesConsoleStreams()
+    public void AskWithDefault_FlushesPromptBeforeReading()
     {
-        var originalIn = Console.In;
-        var originalOut = Console.Out;
+        using var reader = new FlushTrackingReader("value\n");
+        using var writer = new FlushTrackingWriter(reader);
 
-        try
+        ConsolePrompt.AskWithDefault(reader, writer, "Label", "default");
+
+        Assert.True(writer.FlushedBeforeRead, "writer must flush before ReadLine");
+    }
+
+    private sealed class FlushTrackingReader(string content) : StringReader(content)
+    {
+        public bool HasRead { get; private set; }
+
+        public override string? ReadLine()
         {
-            using var reader = new StringReader("\n");
-            using var writer = new StringWriter();
-            Console.SetIn(reader);
-            Console.SetOut(writer);
-
-            var result = ConsolePrompt.AskWithDefault("Model ID", "qwen2.5:7b");
-
-            Assert.Equal("qwen2.5:7b", result);
-            Assert.Contains("Model ID", writer.ToString());
+            HasRead = true;
+            return base.ReadLine();
         }
-        finally
+    }
+
+    private sealed class FlushTrackingWriter(FlushTrackingReader reader) : StringWriter
+    {
+        public bool FlushedBeforeRead { get; private set; }
+
+        public override void Flush()
         {
-            Console.SetIn(originalIn);
-            Console.SetOut(originalOut);
+            if (!reader.HasRead)
+                FlushedBeforeRead = true;
+            base.Flush();
         }
     }
 }

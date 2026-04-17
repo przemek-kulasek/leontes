@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using Leontes.Application.Configuration;
 using Leontes.Domain.ThinkingPipeline;
@@ -51,7 +52,7 @@ internal static class PlanningPromptBuilder
         sb.AppendLine("You are in the PLANNING stage. Your job is to analyze the user's message and create a brief plan for how to respond.");
         sb.AppendLine("- State what approach you will take (1-3 sentences)");
         sb.AppendLine("- If tools are needed, reference them as [tool:toolName]");
-        sb.AppendLine($"- Your confidence threshold is {confidenceThreshold:F2}. If your confidence falls below it, start your plan with [NEEDS_CLARIFICATION] followed by the question to ask the user");
+        sb.AppendLine($"- Your confidence threshold is {confidenceThreshold.ToString("F2", CultureInfo.InvariantCulture)}. If your confidence falls below it, start your plan with [NEEDS_CLARIFICATION] followed by the question to ask the user");
         sb.AppendLine($"- Your proactivity level is {proactivityLevel}. {DescribeProactivity(proactivityLevel)}");
         sb.AppendLine("- Keep the plan concise — it guides execution, not the user");
         return sb.ToString();
@@ -60,9 +61,8 @@ internal static class PlanningPromptBuilder
     private static string DescribeProactivity(ProactivityLevel level) => level switch
     {
         ProactivityLevel.Minimal => "Only address what was asked. Do not volunteer extra context.",
-        ProactivityLevel.Balanced => "Surface relevant context when it helps, but do not overload the response.",
         ProactivityLevel.Proactive => "Actively suggest next steps and volunteer related information when it adds value.",
-        _ => throw new ArgumentOutOfRangeException(nameof(level), level, null)
+        _ => "Surface relevant context when it helps, but do not overload the response."
     };
 
     private static string BuildPlanningUserPrompt(ThinkingContext context)

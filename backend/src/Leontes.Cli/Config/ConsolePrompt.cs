@@ -12,6 +12,7 @@ public static class ConsolePrompt
         string defaultValue)
     {
         writer.Write($"{label} [{defaultValue}]: ");
+        writer.Flush();
         var input = reader.ReadLine();
 
         return string.IsNullOrWhiteSpace(input) ? defaultValue : input.Trim();

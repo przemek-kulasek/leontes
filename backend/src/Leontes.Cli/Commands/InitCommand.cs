@@ -17,6 +17,8 @@ public static class InitCommand
     private const string DefaultLargeModelId = "qwen2.5:7b";
     private const string DefaultSmallModelId = "qwen2.5:3b";
 
+    private static readonly string[] SupportedProviders = ["ollama"];
+
     public static async Task<int> RunAsync(string[] args)
     {
         Console.WriteLine("Leontes Setup Wizard");
@@ -100,9 +102,22 @@ public static class InitCommand
     }
 
     private static ModelTierInput PromptForTier(string tierLabel, string defaultModelId) => new(
-        ConsolePrompt.AskWithDefault($"{tierLabel} model provider", DefaultOllamaProvider),
+        PromptForProvider(tierLabel),
         ConsolePrompt.AskWithDefault($"{tierLabel} model ID", defaultModelId),
         ConsolePrompt.AskWithDefault($"{tierLabel} endpoint", DefaultOllamaEndpoint));
+
+    private static string PromptForProvider(string tierLabel)
+    {
+        while (true)
+        {
+            var value = ConsolePrompt.AskWithDefault($"{tierLabel} model provider", DefaultOllamaProvider);
+
+            if (SupportedProviders.Contains(value, StringComparer.OrdinalIgnoreCase))
+                return value.ToLowerInvariant();
+
+            Console.WriteLine($"Unsupported provider '{value}'. Supported: {string.Join(", ", SupportedProviders)}.");
+        }
+    }
 
     private sealed record ModelTierInput(string Provider, string ModelId, string Endpoint)
     {
@@ -131,20 +146,32 @@ public static class InitCommand
     {
         try
         {
-            using var process = Process.Start(new ProcessStartInfo
+            var startInfo = new ProcessStartInfo
             {
                 FileName = "dotnet",
-                Arguments = $"user-secrets set \"{key}\" \"{value}\" --id {userSecretsId}",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
                 CreateNoWindow = true
-            });
+            };
+            startInfo.ArgumentList.Add("user-secrets");
+            startInfo.ArgumentList.Add("set");
+            startInfo.ArgumentList.Add(key);
+            startInfo.ArgumentList.Add(value);
+            startInfo.ArgumentList.Add("--id");
+            startInfo.ArgumentList.Add(userSecretsId);
+
+            using var process = Process.Start(startInfo);
 
             if (process is null)
                 return false;
 
-            process.WaitForExit(TimeSpan.FromSeconds(10));
+            if (!process.WaitForExit(TimeSpan.FromSeconds(10)))
+            {
+                try { process.Kill(entireProcessTree: true); } catch { }
+                return false;
+            }
+
             return process.ExitCode == 0;
         }
         catch
