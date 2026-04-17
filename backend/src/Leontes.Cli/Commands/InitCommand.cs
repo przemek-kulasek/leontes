@@ -11,6 +11,12 @@ public static class InitCommand
     private const string WorkerUserSecretsId = "7079f596-dc6d-426f-8d37-dacd99b8648a";
     private const string CliUserSecretsId = "b3a7f1d2-8c4e-4a9b-9f6d-2e5c8b1a0d3f";
 
+    private const string ModelsKeyPrefix = "AiProvider:Models";
+    private const string DefaultOllamaProvider = "ollama";
+    private const string DefaultOllamaEndpoint = "http://localhost:11434";
+    private const string DefaultLargeModelId = "qwen2.5:7b";
+    private const string DefaultSmallModelId = "qwen2.5:3b";
+
     public static async Task<int> RunAsync(string[] args)
     {
         Console.WriteLine("Leontes Setup Wizard");
@@ -36,6 +42,13 @@ public static class InitCommand
         Console.WriteLine($"Key: {apiKey}");
         Console.WriteLine();
 
+        if (!ConfigureAiModels())
+        {
+            Console.WriteLine();
+            Console.WriteLine("Could not store AI model configuration in user secrets.");
+            return 1;
+        }
+
         var config = new CliConfiguration();
         using var client = new LeontesApiClient(config.BaseUrl, config.ApiKey);
 
@@ -60,6 +73,45 @@ public static class InitCommand
         }
 
         return 0;
+    }
+
+    private static bool ConfigureAiModels()
+    {
+        Console.WriteLine("AI Provider Configuration");
+        Console.WriteLine("-------------------------");
+        Console.WriteLine("Large tier drives Plan + Execute. Small tier drives Reflect, Consolidation, Sentinel.");
+        Console.WriteLine("Press Enter to accept each default.");
+        Console.WriteLine();
+
+        var large = PromptForTier("Large", DefaultLargeModelId);
+        var small = PromptForTier("Small", DefaultSmallModelId);
+
+        var settings = large.ToSecrets("Large").Concat(small.ToSecrets("Small"));
+
+        foreach (var (key, value) in settings)
+        {
+            if (!SetUserSecret(ApiUserSecretsId, key, value))
+                return false;
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("AI model configuration saved.");
+        return true;
+    }
+
+    private static ModelTierInput PromptForTier(string tierLabel, string defaultModelId) => new(
+        ConsolePrompt.AskWithDefault($"{tierLabel} model provider", DefaultOllamaProvider),
+        ConsolePrompt.AskWithDefault($"{tierLabel} model ID", defaultModelId),
+        ConsolePrompt.AskWithDefault($"{tierLabel} endpoint", DefaultOllamaEndpoint));
+
+    private sealed record ModelTierInput(string Provider, string ModelId, string Endpoint)
+    {
+        public IEnumerable<(string Key, string Value)> ToSecrets(string tier) =>
+        [
+            ($"{ModelsKeyPrefix}:{tier}:Provider", Provider),
+            ($"{ModelsKeyPrefix}:{tier}:ModelId", ModelId),
+            ($"{ModelsKeyPrefix}:{tier}:Endpoint", Endpoint)
+        ];
     }
 
     private static bool SetApiKeySecrets(string apiKey)

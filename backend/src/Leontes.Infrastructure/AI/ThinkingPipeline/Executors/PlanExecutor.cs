@@ -46,7 +46,10 @@ internal sealed class PlanExecutor(
 
         var chatOptions = new ChatOptions { Temperature = stageSettings.Temperature };
         var planningMessages = PlanningPromptBuilder.Build(
-            message, persona.Instructions);
+            message,
+            persona.Instructions,
+            personaOptions.Value.ConfidenceThreshold,
+            personaOptions.Value.ProactivityLevel);
 
         var response = await chatClient.GetResponseAsync(
             planningMessages, chatOptions, cancellationToken);

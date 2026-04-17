@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <Compile Include="..\..\src\Leontes.Cli\Auth\ApiKeyGenerator.cs" Link="Auth\ApiKeyGenerator.cs" />
+    <Compile Include="..\..\src\Leontes.Cli\Config\ConsolePrompt.cs" Link="Config\ConsolePrompt.cs" />
   </ItemGroup>
 
   <ItemGroup>
