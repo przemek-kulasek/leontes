@@ -51,13 +51,37 @@ internal sealed class PlanExecutor(
             personaOptions.Value.ConfidenceThreshold,
             personaOptions.Value.ProactivityLevel);
 
-        var response = await chatClient.GetResponseAsync(
-            planningMessages, chatOptions, cancellationToken);
+        string planText;
+        try
+        {
+            var response = await chatClient.GetResponseAsync(
+                planningMessages, chatOptions, cancellationToken);
+            planText = response.Text;
+            tokenMeter.Record("Plan",
+                (int)(response.Usage?.InputTokenCount ?? 0),
+                (int)(response.Usage?.OutputTokenCount ?? 0));
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex,
+                "Plan LLM call failed for message {MessageId}; degrading to direct-response mode",
+                message.MessageId);
 
-        var planText = response.Text;
-        tokenMeter.Record("Plan",
-            (int)(response.Usage?.InputTokenCount ?? 0),
-            (int)(response.Usage?.OutputTokenCount ?? 0));
+            message.Plan = string.Empty;
+            message.SelectedTools = [];
+            decisionRecorder.Record("Plan", "Degraded", "LLM unavailable — direct response");
+
+            await context.AddEventAsync(
+                new ProgressEvent("Plan", "Plan stage degraded", 0.55),
+                cancellationToken);
+
+            await context.SendMessageAsync(message, cancellationToken: cancellationToken);
+            return;
+        }
 
         // Check if the LLM requests clarification
         if (planText.StartsWith(NeedsClarificationPrefix, StringComparison.OrdinalIgnoreCase))

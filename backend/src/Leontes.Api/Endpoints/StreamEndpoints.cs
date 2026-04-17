@@ -38,6 +38,7 @@ public static class StreamEndpoints
         HttpContext httpContext,
         IWorkflowEventBridge bridge,
         IWorkflowSessionManager sessions,
+        IRequestPortTimeoutScheduler timeouts,
         IServiceScopeFactory scopeFactory,
         IOptions<ProactiveCommunicationOptions> options,
         ILogger<IWorkflowEventBridge> logger,
@@ -84,6 +85,7 @@ public static class StreamEndpoints
                     if (evt is RequestInfoEvent req)
                     {
                         sessions.TrackPendingRequest(req.Request);
+                        timeouts.Schedule(req.Request);
                     }
 
                     var sseEvent = FormatWorkflowEvent(evt);
@@ -109,7 +111,8 @@ public static class StreamEndpoints
 
     private static async Task HandleRespond(
         RespondRequest request,
-        IWorkflowSessionManager sessions)
+        IWorkflowSessionManager sessions,
+        IRequestPortTimeoutScheduler timeouts)
     {
         var run = sessions.GetActiveRun();
         if (run is null)
@@ -123,6 +126,8 @@ public static class StreamEndpoints
             throw new Domain.Exceptions.NotFoundException(
                 $"Request '{request.RequestId}' not found or already responded");
         }
+
+        timeouts.Cancel(request.RequestId);
 
         await run.SendResponseAsync(pending.CreateResponse(request.Response));
     }
@@ -161,6 +166,8 @@ public static class StreamEndpoints
             {
                 text = t.Text
             }),
+            TimeoutEvent to when to.Data is TimeoutPayload tp => FormatSseEvent(
+                "timeout", tp),
             SuperStepCompletedEvent s => FormatSseEvent("checkpoint", new
             {
                 stepNumber = s.Data

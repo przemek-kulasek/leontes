@@ -83,6 +83,20 @@ internal sealed class ExecuteExecutor(
                 "Execute interrupted for message {MessageId}, partial response length {Length}",
                 message.MessageId, responseBuilder.Length);
         }
+        catch (Exception ex)
+        {
+            logger.LogError(ex,
+                "Execute failed for message {MessageId}; delivering partial+error response",
+                message.MessageId);
+
+            var partial = responseBuilder.ToString();
+            var apology = partial.Length > 0
+                ? partial + "\n\n[I ran into a problem finishing this response. Please try again shortly.]"
+                : "I'm having trouble reaching the AI provider right now. Please try again shortly.";
+
+            message.Response = apology;
+            message.IsComplete = responseBuilder.Length == 0;
+        }
 
         await context.AddEventAsync(
             new ProgressEvent("Execute", "Response complete", 1.0),
