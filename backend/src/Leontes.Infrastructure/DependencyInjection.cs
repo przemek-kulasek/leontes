@@ -5,6 +5,7 @@ using Leontes.Application.Messaging;
 using Leontes.Application.ProactiveCommunication;
 using Leontes.Application.ThinkingPipeline;
 using Leontes.Infrastructure.AI;
+using Leontes.Infrastructure.AI.Memory;
 using Leontes.Infrastructure.AI.ThinkingPipeline;
 using Leontes.Infrastructure.AI.ThinkingPipeline.Executors;
 using Leontes.Infrastructure.AI.Tools;
@@ -21,6 +22,7 @@ using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using OllamaSharp;
 
 namespace Leontes.Infrastructure;
@@ -38,7 +40,7 @@ public static class DependencyInjection
 
         services.AddDbContext<ApplicationDbContext>((sp, options) =>
         {
-            options.UseNpgsql(connectionString);
+            options.UseNpgsql(connectionString, npgsql => npgsql.UseVector());
             options.AddInterceptors(sp.GetRequiredService<AuditInterceptor>());
         });
 
@@ -48,12 +50,37 @@ public static class DependencyInjection
         services.AddScoped<ApplicationDbContextInitializer>();
 
         AddAiServices(services, configuration);
+        AddMemoryServices(services, configuration);
         AddThinkingPipeline(services, configuration);
         AddSignalServices(services, configuration);
         AddTelegramServices(services, configuration);
         AddProactiveCommunicationServices(services, configuration);
 
         return services;
+    }
+
+    private static void AddMemoryServices(IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<MemoryOptions>(configuration.GetSection(MemoryOptions.SectionName));
+
+        services.AddSingleton<IEmbeddingGenerator<string, Embedding<float>>>(sp =>
+        {
+            var options = sp.GetRequiredService<IOptions<MemoryOptions>>().Value;
+            var endpoint = options.EmbeddingEndpoint
+                ?? configuration["AiProvider:Endpoint"]
+                ?? "http://localhost:11434";
+
+            return options.EmbeddingProvider.ToLowerInvariant() switch
+            {
+                "ollama" => new OllamaApiClient(new Uri(endpoint), options.EmbeddingModelId),
+                _ => throw new InvalidOperationException(
+                    $"Unsupported embedding provider '{options.EmbeddingProvider}'. Supported values: Ollama.")
+            };
+        });
+
+        services.AddSingleton<IEmbeddingService, EmbeddingService>();
+        services.AddSingleton<IMemoryStore, PgVectorMemoryStore>();
+        services.AddSingleton<ISynapseGraph, PgVectorSynapseGraph>();
     }
 
     private static void AddAiServices(IServiceCollection services, IConfiguration configuration)
@@ -120,8 +147,6 @@ public static class DependencyInjection
             configuration.GetSection(ThinkingPipelineOptions.SectionName));
 
         // Stub implementations (replaced when real features are built)
-        services.AddSingleton<IMemoryStore, NullMemoryStore>();
-        services.AddSingleton<ISynapseGraph, NullSynapseGraph>();
         services.AddSingleton<ITokenMeter, NullTokenMeter>();
         services.AddSingleton<IDecisionRecorder, NullDecisionRecorder>();
 

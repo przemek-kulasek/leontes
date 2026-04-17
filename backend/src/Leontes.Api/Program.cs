@@ -4,6 +4,7 @@ using Leontes.Api.Endpoints;
 using Leontes.Api.Extensions;
 using Leontes.Application;
 using Leontes.Infrastructure;
+using Leontes.Infrastructure.AI.Memory;
 using Scalar.AspNetCore;
 using Serilog;
 
@@ -22,6 +23,8 @@ builder.Services.AddApiKeyAuthentication(builder.Configuration);
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+builder.Services.AddHostedService<MemoryConsolidationService>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is required.");

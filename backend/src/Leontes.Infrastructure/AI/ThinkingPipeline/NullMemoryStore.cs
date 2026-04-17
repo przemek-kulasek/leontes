@@ -1,20 +1,24 @@
 using Leontes.Application.ThinkingPipeline;
-using Leontes.Domain.ThinkingPipeline;
+using Leontes.Domain.Enums;
 
 namespace Leontes.Infrastructure.AI.ThinkingPipeline;
 
 internal sealed class NullMemoryStore : IMemoryStore
 {
-    public Task<IReadOnlyList<RelevantMemory>> SearchAsync(
+    public Task<IReadOnlyList<MemorySearchResult>> SearchAsync(
         string query, int limit, CancellationToken cancellationToken)
     {
-        return Task.FromResult<IReadOnlyList<RelevantMemory>>([]);
+        return Task.FromResult<IReadOnlyList<MemorySearchResult>>([]);
     }
 
-    public Task StoreEpisodicAsync(
-        Guid conversationId, string userContent, string assistantResponse,
+    public Task<Guid> StoreAsync(
+        string content,
+        MemoryType type,
+        Guid? sourceMessageId,
+        Guid? sourceConversationId,
+        float importance,
         CancellationToken cancellationToken)
     {
-        return Task.CompletedTask;
+        return Task.FromResult(Guid.Empty);
     }
 }

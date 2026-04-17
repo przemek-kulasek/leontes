@@ -20,7 +20,12 @@ public sealed class ThinkingContextTests
             Urgency = MessageUrgency.High,
             RelevantMemories =
             [
-                new RelevantMemory(Guid.NewGuid(), "Weekly report filed on Tuesdays", MemoryType.Episodic, 0.85)
+                new RelevantMemory(
+                    Guid.NewGuid(),
+                    "Weekly report filed on Tuesdays",
+                    MemoryType.Observation,
+                    0.85,
+                    DateTime.UtcNow)
             ],
             ConversationHistory =
             [
@@ -85,12 +90,14 @@ public sealed class ThinkingContextTests
     public void RelevantMemory_Record_PreservesValues()
     {
         var id = Guid.NewGuid();
-        var memory = new RelevantMemory(id, "test content", MemoryType.Semantic, 0.95);
+        var createdAt = DateTime.UtcNow;
+        var memory = new RelevantMemory(id, "test content", MemoryType.Fact, 0.95, createdAt);
 
         Assert.Equal(id, memory.MemoryId);
         Assert.Equal("test content", memory.Content);
-        Assert.Equal(MemoryType.Semantic, memory.Type);
+        Assert.Equal(MemoryType.Fact, memory.Type);
         Assert.Equal(0.95, memory.Relevance);
+        Assert.Equal(createdAt, memory.CreatedAt);
     }
 
     [Fact]

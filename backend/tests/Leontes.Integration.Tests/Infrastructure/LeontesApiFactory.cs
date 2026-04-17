@@ -12,7 +12,7 @@ namespace Leontes.Integration.Tests.Infrastructure;
 
 public sealed class LeontesApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine")
+    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("pgvector/pgvector:pg17")
         .Build();
 
     public const string TestApiKey = "lnt_test-api-key-for-integration-tests";
@@ -36,7 +36,7 @@ public sealed class LeontesApiFactory : WebApplicationFactory<Program>, IAsyncLi
             services.AddDbContext<ApplicationDbContext>((sp, opt) =>
             {
                 opt.AddInterceptors(sp.GetServices<Microsoft.EntityFrameworkCore.Diagnostics.ISaveChangesInterceptor>());
-                opt.UseNpgsql(_postgres.GetConnectionString());
+                opt.UseNpgsql(_postgres.GetConnectionString(), npgsql => npgsql.UseVector());
             });
 
             // Replace all IChatClient registrations (keyed and non-keyed)

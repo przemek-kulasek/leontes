@@ -41,7 +41,7 @@ public sealed class ThinkingContext
 }
 
 public sealed record RelevantMemory(
-    Guid MemoryId, string Content, MemoryType Type, double Relevance);
+    Guid MemoryId, string Content, MemoryType Type, double Relevance, DateTime CreatedAt);
 
 public sealed record HistoryMessage(
     string Role, string Content, DateTime Timestamp);

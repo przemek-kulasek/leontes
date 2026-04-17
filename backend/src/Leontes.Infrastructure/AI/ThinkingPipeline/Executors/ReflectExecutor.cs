@@ -1,5 +1,6 @@
 using Leontes.Application.ProactiveCommunication.Events;
 using Leontes.Application.ThinkingPipeline;
+using Leontes.Domain.Enums;
 using Leontes.Domain.ThinkingPipeline;
 using Leontes.Infrastructure.AI.ThinkingPipeline.Heuristics;
 using Microsoft.Agents.AI.Workflows;
@@ -45,20 +46,42 @@ internal sealed class ReflectExecutor(
             logger.LogWarning(ex, "Insight extraction failed for message {MessageId}", message.MessageId);
         }
 
-        // Store episodic memory
+        // Store episodic observation
         try
         {
-            await memoryStore.StoreEpisodicAsync(
+            await memoryStore.StoreAsync(
+                $"User asked: {message.UserContent}\nAssistant answered: {message.Response}",
+                MemoryType.Observation,
+                message.MessageId,
                 message.ConversationId,
-                message.UserContent,
-                message.Response!,
+                importance: 0.5f,
                 cancellationToken);
         }
         catch (Exception ex)
         {
             logger.LogWarning(ex,
-                "Failed to store episodic memory for message {MessageId}",
+                "Failed to store observation memory for message {MessageId}",
                 message.MessageId);
+        }
+
+        // Promote extracted insights to insight memories
+        foreach (var insight in message.NewInsights)
+        {
+            try
+            {
+                await memoryStore.StoreAsync(
+                    insight,
+                    MemoryType.Insight,
+                    message.MessageId,
+                    message.ConversationId,
+                    importance: 0.7f,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogDebug(ex,
+                    "Failed to store insight for message {MessageId}", message.MessageId);
+            }
         }
 
         // Update Synapse Graph relationships
@@ -67,7 +90,7 @@ internal sealed class ReflectExecutor(
             try
             {
                 await synapseGraph.AddRelationshipAsync(
-                    update.EntityId, update.RelationType, update.RelatedEntityId,
+                    update.EntityId, update.RelatedEntityId, update.RelationType,
                     cancellationToken);
             }
             catch (Exception ex)

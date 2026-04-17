@@ -113,7 +113,7 @@ public sealed class PlanningPromptBuilderTests
         var context = CreateContext("test");
         context.RelevantMemories =
         [
-            new RelevantMemory(Guid.NewGuid(), "Past context", MemoryType.Episodic, 0.85)
+            new RelevantMemory(Guid.NewGuid(), "Past context", MemoryType.Observation, 0.85, DateTime.UtcNow)
         ];
 
         var messages = PlanningPromptBuilder.Build(context, Persona, DefaultConfidence, DefaultProactivity);
