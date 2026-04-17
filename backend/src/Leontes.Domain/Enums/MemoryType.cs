@@ -2,7 +2,8 @@ namespace Leontes.Domain.Enums;
 
 public enum MemoryType
 {
-    Episodic,
-    Semantic,
-    Procedural
+    Observation,
+    Insight,
+    Preference,
+    Fact
 }

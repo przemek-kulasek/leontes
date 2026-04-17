@@ -61,7 +61,7 @@ public sealed class ExecutionPromptBuilderTests
         var context = CreateContext("test");
         context.RelevantMemories =
         [
-            new RelevantMemory(Guid.NewGuid(), "User prefers terse responses", MemoryType.Episodic, 0.9)
+            new RelevantMemory(Guid.NewGuid(), "User prefers terse responses", MemoryType.Preference, 0.9, DateTime.UtcNow)
         ];
 
         var messages = ExecutionPromptBuilder.Build(context, Persona);

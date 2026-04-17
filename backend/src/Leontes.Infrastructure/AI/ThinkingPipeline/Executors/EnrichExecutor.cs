@@ -47,8 +47,12 @@ internal sealed class EnrichExecutor(
         // Search episodic/semantic memory
         try
         {
-            message.RelevantMemories = await memoryStore.SearchAsync(
+            var results = await memoryStore.SearchAsync(
                 message.UserContent, config.MaxRelevantMemories, cancellationToken);
+
+            message.RelevantMemories = [.. results
+                .Where(r => r.Relevance >= config.MemoryRelevanceThreshold)
+                .Select(r => new RelevantMemory(r.Id, r.Content, r.Type, r.Relevance, r.CreatedAt))];
         }
         catch (Exception ex)
         {

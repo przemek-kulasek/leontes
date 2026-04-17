@@ -9,6 +9,8 @@ public static class EndpointExtensions
 
         api.MapChatEndpoints();
         api.MapStreamEndpoints();
+        api.MapMemoryEndpoints();
+        api.MapSynapseEndpoints();
 
         return app;
     }
