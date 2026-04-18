@@ -10,6 +10,10 @@ public interface IApplicationDbContext
     IQueryable<MemoryEntry> MemoryEntries { get; }
     IQueryable<SynapseEntity> SynapseEntities { get; }
     IQueryable<SynapseRelationship> SynapseRelationships { get; }
+    IQueryable<PipelineTrace> PipelineTraces { get; }
+    IQueryable<StageTrace> StageTraces { get; }
+    IQueryable<DecisionRecord> DecisionRecords { get; }
+    IQueryable<MetricsSummary> MetricsSummaries { get; }
 
     void Add<TEntity>(TEntity entity) where TEntity : class;
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

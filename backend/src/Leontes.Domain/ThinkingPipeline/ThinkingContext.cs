@@ -38,6 +38,9 @@ public sealed class ThinkingContext
     // Populated by Reflect
     public IReadOnlyList<string> NewInsights { get; set; } = [];
     public IReadOnlyList<EntityUpdate> GraphUpdates { get; set; } = [];
+
+    // Populated by Execute — agent's self-reported certainty in the response
+    public ConfidenceScore? Confidence { get; set; }
 }
 
 public sealed record RelevantMemory(

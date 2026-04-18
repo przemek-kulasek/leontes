@@ -167,8 +167,17 @@ public sealed class ReflectExecutorTests
     private static ReflectExecutor CreateExecutor(IMemoryStore memoryStore) => new(
         memoryStore,
         new NullSynapseGraph(),
-        new NullDecisionRecorder(),
+        new NoopDecisionRecorder(),
         NullLogger<ReflectExecutor>.Instance);
+
+    private sealed class NoopDecisionRecorder : IDecisionRecorder
+    {
+        public void Record(
+            Guid requestId, string stageName, string decisionType,
+            string chosen, string rationale,
+            IReadOnlyList<Leontes.Domain.Entities.DecisionCandidate>? candidates = null)
+        { }
+    }
 
     private static ThinkingContext CreateContext() => new()
     {

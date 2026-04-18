@@ -11,6 +11,8 @@ public static class CommandRouter
         {
             "init" => await InitCommand.RunAsync(remaining),
             "chat" => await ChatCommand.RunAsync(remaining),
+            "trace" => await TraceCommand.RunAsync(remaining),
+            "metrics" => await MetricsCommand.RunAsync(remaining),
             "--help" or "-h" => ShowHelp(),
             "--version" or "-v" => ShowVersion(),
             _ => ShowUnknownCommand(command)
@@ -23,9 +25,11 @@ public static class CommandRouter
             leontes - Your proactive OS partner
 
             Usage:
-              leontes              Start interactive chat (default)
-              leontes chat         Start interactive chat
-              leontes init         Run first-time setup wizard
+              leontes                         Start interactive chat (default)
+              leontes chat                    Start interactive chat
+              leontes init                    Run first-time setup wizard
+              leontes trace <id> [--explain]  Show the pipeline trace for a request
+              leontes metrics                 Show the current metrics summary
 
             Options:
               --help, -h           Show this help message

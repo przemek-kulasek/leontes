@@ -13,6 +13,10 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<MemoryEntry> MemoryEntrySet => Set<MemoryEntry>();
     public DbSet<SynapseEntity> SynapseEntitySet => Set<SynapseEntity>();
     public DbSet<SynapseRelationship> SynapseRelationshipSet => Set<SynapseRelationship>();
+    public DbSet<PipelineTrace> PipelineTraceSet => Set<PipelineTrace>();
+    public DbSet<StageTrace> StageTraceSet => Set<StageTrace>();
+    public DbSet<DecisionRecord> DecisionRecordSet => Set<DecisionRecord>();
+    public DbSet<MetricsSummary> MetricsSummarySet => Set<MetricsSummary>();
 
     IQueryable<Conversation> IApplicationDbContext.Conversations => ConversationSet;
     IQueryable<Message> IApplicationDbContext.Messages => MessageSet;
@@ -20,6 +24,10 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     IQueryable<MemoryEntry> IApplicationDbContext.MemoryEntries => MemoryEntrySet;
     IQueryable<SynapseEntity> IApplicationDbContext.SynapseEntities => SynapseEntitySet;
     IQueryable<SynapseRelationship> IApplicationDbContext.SynapseRelationships => SynapseRelationshipSet;
+    IQueryable<PipelineTrace> IApplicationDbContext.PipelineTraces => PipelineTraceSet;
+    IQueryable<StageTrace> IApplicationDbContext.StageTraces => StageTraceSet;
+    IQueryable<DecisionRecord> IApplicationDbContext.DecisionRecords => DecisionRecordSet;
+    IQueryable<MetricsSummary> IApplicationDbContext.MetricsSummaries => MetricsSummarySet;
 
     void IApplicationDbContext.Add<TEntity>(TEntity entity) => base.Add(entity);
 

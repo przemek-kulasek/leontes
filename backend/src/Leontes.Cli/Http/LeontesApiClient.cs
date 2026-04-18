@@ -82,6 +82,41 @@ public sealed class LeontesApiClient : IDisposable
         }
     }
 
+    public async Task<string?> GetTraceJsonAsync(Guid requestId, CancellationToken cancellationToken = default)
+    {
+        using var response = await _httpClient.GetAsync(
+            $"/api/v1/telemetry/traces/{requestId}", cancellationToken);
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            return null;
+
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync(cancellationToken);
+    }
+
+    public async Task<string?> GetExplanationAsync(Guid requestId, CancellationToken cancellationToken = default)
+    {
+        using var response = await _httpClient.GetAsync(
+            $"/api/v1/telemetry/explain/{requestId}", cancellationToken);
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            return null;
+
+        response.EnsureSuccessStatusCode();
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        using var doc = JsonDocument.Parse(body);
+        return doc.RootElement.TryGetProperty("explanation", out var exp) ? exp.GetString() : null;
+    }
+
+    public async Task<string?> GetCurrentMetricsJsonAsync(CancellationToken cancellationToken = default)
+    {
+        using var response = await _httpClient.GetAsync(
+            "/api/v1/telemetry/metrics/summary", cancellationToken);
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            return null;
+
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync(cancellationToken);
+    }
+
     public void Dispose()
     {
         _httpClient.Dispose();
