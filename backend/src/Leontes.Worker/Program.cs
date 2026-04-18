@@ -28,6 +28,9 @@ builder.Services.AddHttpClient("LeontesApi", client =>
 .AddStandardResilienceHandler();
 
 builder.Services.AddHostedService<SentinelService>();
+builder.Services.AddHostedService<FileSystemMonitor>();
+if (OperatingSystem.IsWindows())
+    builder.Services.AddHostedService<ClipboardMonitor>();
 builder.Services.AddHostedService<SignalBridgeService>();
 builder.Services.AddHostedService<TelegramBridgeService>();
 

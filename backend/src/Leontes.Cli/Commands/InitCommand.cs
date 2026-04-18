@@ -51,6 +51,13 @@ public static class InitCommand
             return 1;
         }
 
+        if (!ConfigureSentinel())
+        {
+            Console.WriteLine();
+            Console.WriteLine("Could not store Sentinel configuration in user secrets.");
+            return 1;
+        }
+
         var config = new CliConfiguration();
         using var client = new LeontesApiClient(config.BaseUrl, config.ApiKey);
 
@@ -128,6 +135,51 @@ public static class InitCommand
             ($"{ModelsKeyPrefix}:{tier}:Endpoint", Endpoint)
         ];
     }
+
+    private static bool ConfigureSentinel()
+    {
+        Console.WriteLine();
+        Console.WriteLine("Sentinel Configuration");
+        Console.WriteLine("----------------------");
+        Console.WriteLine("Sentinel watches OS events (files, clipboard) and escalates surprising ones to the AI.");
+        Console.WriteLine("Press Enter to accept each default.");
+        Console.WriteLine();
+
+        var clipboard = ConsolePrompt.AskWithDefault("Enable clipboard monitor (y/n)", "y");
+        var fileSystem = ConsolePrompt.AskWithDefault("Enable file system monitor (y/n)", "y");
+
+        var defaultDownloads = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "Downloads");
+
+        var watchInput = ConsolePrompt.AskWithDefault(
+            "File system watch paths (semicolon-separated)",
+            defaultDownloads);
+
+        var settings = new List<(string Key, string Value)>
+        {
+            ("Sentinel:Enabled", "true"),
+            ("Sentinel:Monitors:Clipboard:Enabled", IsYes(clipboard) ? "true" : "false"),
+            ("Sentinel:Monitors:FileSystem:Enabled", IsYes(fileSystem) ? "true" : "false")
+        };
+
+        var paths = watchInput.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        for (var i = 0; i < paths.Length; i++)
+            settings.Add(($"Sentinel:Monitors:FileSystem:WatchPaths:{i}", paths[i]));
+
+        foreach (var (key, value) in settings)
+        {
+            if (!SetUserSecret(WorkerUserSecretsId, key, value))
+                return false;
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("Sentinel configuration saved.");
+        return true;
+    }
+
+    private static bool IsYes(string value) =>
+        value.StartsWith('y') || value.StartsWith('Y');
 
     private static bool SetApiKeySecrets(string apiKey)
     {

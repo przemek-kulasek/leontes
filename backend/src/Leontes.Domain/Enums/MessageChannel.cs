@@ -4,5 +4,6 @@ public enum MessageChannel
 {
     Cli,
     Signal,
-    Telegram
+    Telegram,
+    Sentinel
 }
