@@ -87,7 +87,8 @@ public sealed class ResilientChannelDelivery(
                 logger.LogWarning(ex,
                     "Delivery via {Channel} attempt {Attempt}/{Max} failed; retrying",
                     client.Channel, attempt, maxAttempts);
-                var delay = TimeSpan.FromTicks(baseDelay.Ticks * attempt);
+                // Exponential backoff per feature 85: 5s, 15s, 45s ...
+                var delay = TimeSpan.FromTicks(baseDelay.Ticks * (long)Math.Pow(3, attempt - 1));
                 await Task.Delay(delay, cancellationToken);
             }
             catch (Exception ex)

@@ -119,10 +119,9 @@ public sealed class ResilientChatClient(
                 catch (Exception ex)
                 {
                     availability.RecordFailure();
-                    logger.LogWarning(ex,
-                        "LLM streaming interrupted after {ChunkSeen} (sawChunk={SawChunk})",
-                        sawChunk ? "partial delivery" : "no chunks", sawChunk);
-                    yield break;
+                    logger.LogError(ex,
+                        "LLM streaming interrupted (sawChunk={SawChunk})", sawChunk);
+                    throw;
                 }
 
                 if (!hasNext)
@@ -160,6 +159,11 @@ public sealed class ResilientChatClient(
 
     private static bool IsAuthError(Exception ex)
     {
+        if (ex is HttpRequestException http && http.StatusCode is System.Net.HttpStatusCode status)
+        {
+            return status is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden;
+        }
+        // Some providers wrap HTTP failures in InvalidOperationException with status in message.
         var msg = ex.Message ?? string.Empty;
         return msg.Contains("401", StringComparison.Ordinal)
             || msg.Contains("403", StringComparison.Ordinal)
@@ -169,12 +173,12 @@ public sealed class ResilientChatClient(
 
     private static bool IsTransient(Exception ex)
     {
-        if (ex is HttpRequestException) return true;
-        var msg = ex.Message ?? string.Empty;
-        return msg.Contains("429", StringComparison.Ordinal)
-            || msg.Contains("503", StringComparison.Ordinal)
-            || msg.Contains("502", StringComparison.Ordinal)
-            || msg.Contains("504", StringComparison.Ordinal)
-            || msg.Contains("500", StringComparison.Ordinal);
+        if (ex is HttpRequestException http)
+        {
+            if (http.StatusCode is null) return true;
+            var code = (int)http.StatusCode;
+            return code == 408 || code == 429 || code >= 500;
+        }
+        return ex is TimeoutException or IOException;
     }
 }

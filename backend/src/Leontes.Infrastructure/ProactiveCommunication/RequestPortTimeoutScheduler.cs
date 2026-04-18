@@ -125,14 +125,17 @@ public sealed class RequestPortTimeoutScheduler(
     private static (object Response, string Default) DefaultResponseFor(
         ExternalRequest request, string requestType)
     {
-        // Defaults per feature 85 error handling table
+        // Defaults per feature 85 error handling table. Response types must match
+        // the RequestPort<TRequest, TResponse> declarations in ProactiveRequestPorts;
+        // ExternalRequest.CreateResponse does not accept null, so we send an empty
+        // string for string?-typed ports rather than null.
         return requestType switch
         {
             nameof(QuestionRequest) => ("", "proceed-best-guess"),
             nameof(ToolApprovalRequest) => (false, "deny"),
             nameof(PermissionRequest) => (false, "deny"),
-            nameof(SentinelAlert) => ((object?)null!, "dismiss"),
-            _ => (null!, "none")
+            nameof(SentinelAlert) => ("", "dismiss"),
+            _ => (string.Empty, "none")
         };
     }
 

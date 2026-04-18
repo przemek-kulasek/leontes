@@ -4,7 +4,6 @@ using Leontes.Application.ThinkingPipeline;
 using Leontes.Domain.Entities;
 using Leontes.Domain.Enums;
 using Leontes.Domain.ThinkingPipeline;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -13,9 +12,12 @@ using Microsoft.Extensions.Options;
 namespace Leontes.Infrastructure.AI.ThinkingPipeline;
 
 /// <summary>
-/// Trims enrichment/history until the assembled prompt fits the model's context
-/// window. Strategy: drop low-relevance memories → summarize older history →
-/// truncate. Summaries are cached in the Messages table with Role=Summary.
+/// Trims enrichment/history on the supplied <see cref="ThinkingContext"/> until
+/// the assembled prompt fits the model's context window. Mutates the passed
+/// instance in place (matching the Perceive/Enrich/Plan/Execute mutation
+/// pattern) and returns it. Strategy: drop low-relevance memories → summarize
+/// older history → truncate. Summary messages are persisted with
+/// Role=Summary for history/observability.
 /// </summary>
 public sealed class ContextWindowManager(
     [FromKeyedServices("Small")] IChatClient summarizer,
@@ -31,8 +33,15 @@ public sealed class ContextWindowManager(
         CancellationToken cancellationToken)
     {
         var budget = Math.Max(256, modelTokenLimit - (modelTokenLimit * Math.Max(0, _options.BufferPercentage) / 100));
+        var charsPerToken = Math.Max(1, _options.AverageCharsPerToken);
 
-        if (EstimateTokens(context) <= budget)
+        var baseChars = (context.UserContent?.Length ?? 0) + (context.Plan?.Length ?? 0);
+        var memoryChars = context.RelevantMemories.Sum(m => m.Content.Length);
+        var historyChars = context.ConversationHistory.Sum(h => h.Content.Length);
+
+        int Estimate() => (baseChars + memoryChars + historyChars) / charsPerToken;
+
+        if (Estimate() <= budget)
         {
             return context;
         }
@@ -40,21 +49,20 @@ public sealed class ContextWindowManager(
         // Strategy 1: drop low-relevance memories (keep highest-relevance first)
         if (context.RelevantMemories.Count > 0)
         {
-            var ordered = context.RelevantMemories
-                .OrderByDescending(m => m.Relevance)
-                .ToList();
-            context.RelevantMemories = ordered;
-            while (ordered.Count > 0 && EstimateTokens(context) > budget)
+            var ordered = context.RelevantMemories.OrderByDescending(m => m.Relevance).ToList();
+            while (ordered.Count > 0 && Estimate() > budget)
             {
+                var dropped = ordered[^1];
+                memoryChars -= dropped.Content.Length;
                 ordered.RemoveAt(ordered.Count - 1);
-                context.RelevantMemories = ordered;
             }
+            context.RelevantMemories = ordered;
             logger.LogDebug(
                 "Context fit: reduced memories to {Count} for message {MessageId}",
-                context.RelevantMemories.Count, context.MessageId);
+                ordered.Count, context.MessageId);
         }
 
-        if (EstimateTokens(context) <= budget)
+        if (Estimate() <= budget)
         {
             return context;
         }
@@ -63,21 +71,23 @@ public sealed class ContextWindowManager(
         var minRecent = Math.Max(1, _options.MinRecentTurns);
         if (context.ConversationHistory.Count > minRecent)
         {
-            context = await SummarizeHistoryAsync(context, minRecent, cancellationToken);
+            await SummarizeHistoryAsync(context, minRecent, cancellationToken);
+            historyChars = context.ConversationHistory.Sum(h => h.Content.Length);
         }
 
-        if (EstimateTokens(context) <= budget)
+        if (Estimate() <= budget)
         {
             return context;
         }
 
         // Strategy 3: truncate — drop oldest remaining history messages
         var history = context.ConversationHistory.ToList();
-        while (history.Count > 1 && EstimateTokens(context) > budget)
+        while (history.Count > 1 && Estimate() > budget)
         {
+            historyChars -= history[0].Content.Length;
             history.RemoveAt(0);
-            context.ConversationHistory = history;
         }
+        context.ConversationHistory = history;
 
         logger.LogWarning(
             "Context window truncated for message {MessageId}: {HistoryCount} history, {MemoryCount} memories",
@@ -86,61 +96,42 @@ public sealed class ContextWindowManager(
         return context;
     }
 
-    private async Task<ThinkingContext> SummarizeHistoryAsync(
+    private async Task SummarizeHistoryAsync(
         ThinkingContext context,
         int minRecent,
         CancellationToken cancellationToken)
     {
         var history = context.ConversationHistory.ToList();
         var olderCount = history.Count - minRecent;
-        if (olderCount <= 0) return context;
+        if (olderCount <= 0) return;
 
         var older = history.Take(olderCount).ToList();
         var recent = history.Skip(olderCount).ToList();
 
-        // Check for an existing cached summary for this conversation
+        var summaryText = await GenerateSummaryAsync(older, cancellationToken);
+
         using var scope = scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
-
-        var existing = await db.Messages
-            .AsNoTracking()
-            .Where(m => m.ConversationId == context.ConversationId && m.Role == MessageRole.Summary)
-            .OrderByDescending(m => m.Created)
-            .Select(m => new { m.Id, m.Content, m.Created })
-            .FirstOrDefaultAsync(cancellationToken);
-
-        string summaryText;
-        if (existing is not null && existing.Created >= older[^1].Timestamp)
+        var summaryMessage = new Message
         {
-            summaryText = existing.Content;
-            logger.LogDebug("Reusing cached summary {SummaryId}", existing.Id);
-        }
-        else
-        {
-            summaryText = await GenerateSummaryAsync(older, cancellationToken);
+            Id = Guid.NewGuid(),
+            Role = MessageRole.Summary,
+            Content = summaryText,
+            Channel = Enum.TryParse<MessageChannel>(context.Channel, true, out var ch)
+                ? ch
+                : MessageChannel.Cli,
+            ConversationId = context.ConversationId,
+            IsComplete = true
+        };
+        db.Add(summaryMessage);
+        await db.SaveChangesAsync(cancellationToken);
 
-            var summaryMessage = new Message
-            {
-                Id = Guid.NewGuid(),
-                Role = MessageRole.Summary,
-                Content = summaryText,
-                Channel = Enum.TryParse<MessageChannel>(context.Channel, true, out var ch)
-                    ? ch
-                    : MessageChannel.Cli,
-                ConversationId = context.ConversationId,
-                IsComplete = true
-            };
-            db.Add(summaryMessage);
-            await db.SaveChangesAsync(cancellationToken);
-        }
-
-        var condensed = new List<HistoryMessage>
+        var condensed = new List<HistoryMessage>(recent.Count + 1)
         {
             new("System", $"[summary of earlier conversation] {summaryText}", older[0].Timestamp)
         };
         condensed.AddRange(recent);
         context.ConversationHistory = condensed;
-        return context;
     }
 
     private async Task<string> GenerateSummaryAsync(
@@ -164,14 +155,5 @@ public sealed class ContextWindowManager(
             logger.LogWarning(ex, "Summary generation failed; using naive fallback");
             return $"Earlier exchange covered: {older.Count} messages (summary unavailable).";
         }
-    }
-
-    private int EstimateTokens(ThinkingContext context)
-    {
-        var chars = (context.UserContent?.Length ?? 0)
-            + (context.Plan?.Length ?? 0)
-            + context.RelevantMemories.Sum(m => m.Content.Length)
-            + context.ConversationHistory.Sum(h => h.Content.Length);
-        return chars / Math.Max(1, _options.AverageCharsPerToken);
     }
 }

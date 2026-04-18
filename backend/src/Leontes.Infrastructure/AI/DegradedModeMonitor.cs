@@ -18,7 +18,7 @@ namespace Leontes.Infrastructure.AI;
 /// </summary>
 public sealed class DegradedModeMonitor(
     ILlmAvailability availability,
-    [FromKeyedServices("Small")] IChatClient probeClient,
+    [FromKeyedServices("SmallProbe")] IChatClient probeClient,
     IWorkflowEventBridge eventBridge,
     IOptions<ResilienceOptions> options,
     ILogger<DegradedModeMonitor> logger) : BackgroundService

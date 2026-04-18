@@ -110,6 +110,11 @@ public static class DependencyInjection
                 sp.GetRequiredService<IOptions<ResilienceOptions>>(),
                 sp.GetRequiredService<ILogger<ResilientChatClient>>()));
 
+        // Unwrapped probe client used by DegradedModeMonitor so probes don't
+        // feed back into the availability signal they are trying to observe.
+        services.AddKeyedSingleton<IChatClient>("SmallProbe", (_, _) =>
+            CreateChatClient(modelsSection.GetSection("Small"), configuration));
+
         // Default (unkeyed) resolves to Large for backwards compatibility
         services.AddSingleton<IChatClient>(sp =>
             sp.GetRequiredKeyedService<IChatClient>("Large"));
