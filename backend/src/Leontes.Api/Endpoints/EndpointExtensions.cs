@@ -11,6 +11,7 @@ public static class EndpointExtensions
         api.MapStreamEndpoints();
         api.MapMemoryEndpoints();
         api.MapSynapseEndpoints();
+        api.MapTelemetryEndpoints();
 
         return app;
     }

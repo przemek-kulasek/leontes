@@ -4,9 +4,11 @@ using Leontes.Application.Configuration;
 using Leontes.Application.Messaging;
 using Leontes.Application.ProactiveCommunication;
 using Leontes.Application.Sentinel;
+using Leontes.Application.Telemetry;
 using Leontes.Application.ThinkingPipeline;
 using Leontes.Infrastructure.AI;
 using Leontes.Infrastructure.AI.Memory;
+using Leontes.Infrastructure.AI.Telemetry;
 using Leontes.Infrastructure.AI.ThinkingPipeline;
 using Leontes.Infrastructure.AI.ThinkingPipeline.Executors;
 using Leontes.Infrastructure.AI.Tools;
@@ -56,6 +58,7 @@ public static class DependencyInjection
 
         AddAiServices(services, configuration);
         AddMemoryServices(services, configuration);
+        AddTelemetryServices(services, configuration);
         AddThinkingPipeline(services, configuration);
         AddSignalServices(services, configuration);
         AddTelegramServices(services, configuration);
@@ -173,6 +176,20 @@ public static class DependencyInjection
         };
     }
 
+    private static void AddTelemetryServices(IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<TelemetryOptions>(
+            configuration.GetSection(TelemetryOptions.SectionName));
+
+        services.AddSingleton<TelemetryChannel>();
+        services.AddSingleton<SensitiveDataRedactor>();
+        services.AddSingleton<ITelemetryCollector, TelemetryCollector>();
+        services.AddScoped<IExplainabilityService, ExplainabilityService>();
+        services.AddHostedService<TelemetryWriterService>();
+        services.AddHostedService<MetricsAggregationService>();
+        services.AddHostedService<TraceRetentionService>();
+    }
+
     private static void AddThinkingPipeline(IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<ThinkingPipelineOptions>(
@@ -180,7 +197,7 @@ public static class DependencyInjection
 
         // Stub implementations (replaced when real features are built)
         services.AddSingleton<ITokenMeter, NullTokenMeter>();
-        services.AddSingleton<IDecisionRecorder, NullDecisionRecorder>();
+        services.AddSingleton<IDecisionRecorder, TelemetryDecisionRecorder>();
 
         // Checkpoint store (in-memory for now)
         services.AddSingleton<JsonCheckpointStore, InMemoryCheckpointStore>();

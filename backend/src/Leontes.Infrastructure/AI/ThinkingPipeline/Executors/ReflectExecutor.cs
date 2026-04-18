@@ -103,8 +103,9 @@ internal sealed class ReflectExecutor(
 
         if (message.NewInsights.Count > 0)
         {
-            decisionRecorder.Record("Reflect", "InsightsExtracted",
-                string.Join("; ", message.NewInsights));
+            decisionRecorder.Record(message.MessageId, "Reflect", "InsightExtraction",
+                chosen: message.NewInsights[0],
+                rationale: string.Join("; ", message.NewInsights));
 
             await context.AddEventAsync(
                 new InsightEvent(

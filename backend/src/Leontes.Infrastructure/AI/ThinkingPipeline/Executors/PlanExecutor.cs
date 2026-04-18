@@ -73,7 +73,8 @@ internal sealed class PlanExecutor(
 
             message.Plan = string.Empty;
             message.SelectedTools = [];
-            decisionRecorder.Record("Plan", "Degraded", "LLM unavailable — direct response");
+            decisionRecorder.Record(message.MessageId, "Plan", "ExecutionMode",
+                "DirectResponse", "LLM unavailable — fell back to direct response");
 
             await context.AddEventAsync(
                 new ProgressEvent("Plan", "Plan stage degraded", 0.55),
@@ -90,7 +91,8 @@ internal sealed class PlanExecutor(
             message.RequiresHumanInput = true;
             message.HumanInputQuestion = question;
 
-            decisionRecorder.Record("Plan", "RequestClarification", question);
+            decisionRecorder.Record(message.MessageId, "Plan", "ClarificationNeeded",
+                "AskUser", question);
             logger.LogInformation(
                 "Plan stage requesting clarification for message {MessageId}: {Question}",
                 message.MessageId, question);
@@ -112,8 +114,9 @@ internal sealed class PlanExecutor(
         message.Plan = planText;
         message.SelectedTools = ToolSelector.FromPlan(planText);
 
-        decisionRecorder.Record("Plan", "PlanCreated",
-            $"Tools: [{string.Join(", ", message.SelectedTools)}]");
+        decisionRecorder.Record(message.MessageId, "Plan", "ToolSelection",
+            chosen: string.Join(", ", message.SelectedTools.DefaultIfEmpty("(none)")),
+            rationale: "Tools extracted from generated plan");
 
         logger.LogDebug(
             "Plan created for message {MessageId}: {ToolCount} tools selected",

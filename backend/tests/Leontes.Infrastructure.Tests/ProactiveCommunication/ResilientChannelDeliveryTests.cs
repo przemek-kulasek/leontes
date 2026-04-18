@@ -123,6 +123,10 @@ public sealed class ResilientChannelDeliveryTests
         public IQueryable<MemoryEntry> MemoryEntries => Array.Empty<MemoryEntry>().AsQueryable();
         public IQueryable<SynapseEntity> SynapseEntities => Array.Empty<SynapseEntity>().AsQueryable();
         public IQueryable<SynapseRelationship> SynapseRelationships => Array.Empty<SynapseRelationship>().AsQueryable();
+        public IQueryable<PipelineTrace> PipelineTraces => Array.Empty<PipelineTrace>().AsQueryable();
+        public IQueryable<StageTrace> StageTraces => Array.Empty<StageTrace>().AsQueryable();
+        public IQueryable<DecisionRecord> DecisionRecords => Array.Empty<DecisionRecord>().AsQueryable();
+        public IQueryable<MetricsSummary> MetricsSummaries => Array.Empty<MetricsSummary>().AsQueryable();
 
         public void Add<TEntity>(TEntity entity) where TEntity : class => Added.Add(entity);
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) => Task.FromResult(1);
