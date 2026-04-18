@@ -3,6 +3,7 @@ using Leontes.Application.Chat;
 using Leontes.Application.Configuration;
 using Leontes.Application.Messaging;
 using Leontes.Application.ProactiveCommunication;
+using Leontes.Application.Sentinel;
 using Leontes.Application.ThinkingPipeline;
 using Leontes.Infrastructure.AI;
 using Leontes.Infrastructure.AI.Memory;
@@ -12,6 +13,7 @@ using Leontes.Infrastructure.AI.Tools;
 using Leontes.Infrastructure.Data;
 using Leontes.Infrastructure.Data.Interceptors;
 using Leontes.Infrastructure.ProactiveCommunication;
+using Leontes.Infrastructure.Sentinel;
 using Leontes.Infrastructure.Signal;
 using Leontes.Infrastructure.Telegram;
 using Microsoft.Agents.AI;
@@ -58,8 +60,20 @@ public static class DependencyInjection
         AddSignalServices(services, configuration);
         AddTelegramServices(services, configuration);
         AddProactiveCommunicationServices(services, configuration);
+        AddSentinelServices(services, configuration);
 
         return services;
+    }
+
+    private static void AddSentinelServices(IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<SentinelOptions>(configuration.GetSection(SentinelOptions.SectionName));
+
+        services.AddSingleton<ISentinelFilter, ClipboardContentFilter>();
+        services.AddSingleton<ISentinelFilter, FileSystemEventFilter>();
+        services.AddSingleton<ISentinelHeuristicEngine, SentinelHeuristicEngine>();
+        services.AddSingleton<ISentinelRateLimiter, SentinelRateLimiter>();
+        services.AddSingleton<ISentinelEventQueue, SentinelEventQueue>();
     }
 
     private static void AddMemoryServices(IServiceCollection services, IConfiguration configuration)
