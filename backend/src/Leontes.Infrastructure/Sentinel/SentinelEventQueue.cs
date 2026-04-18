@@ -15,7 +15,7 @@ public sealed class SentinelEventQueue : ISentinelEventQueue
         var capacity = Math.Max(1, options.Value.QueueCapacity);
         _channel = Channel.CreateBounded<SentinelEvent>(new BoundedChannelOptions(capacity)
         {
-            FullMode = BoundedChannelFullMode.DropWrite,
+            FullMode = BoundedChannelFullMode.Wait,
             SingleReader = true,
             SingleWriter = false
         });

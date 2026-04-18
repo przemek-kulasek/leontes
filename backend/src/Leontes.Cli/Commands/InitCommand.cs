@@ -148,12 +148,13 @@ public static class InitCommand
         var clipboard = ConsolePrompt.AskWithDefault("Enable clipboard monitor (y/n)", "y");
         var fileSystem = ConsolePrompt.AskWithDefault("Enable file system monitor (y/n)", "y");
 
-        var defaultPaths = string.Join(";",
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads"));
+        var defaultDownloads = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "Downloads");
 
         var watchInput = ConsolePrompt.AskWithDefault(
             "File system watch paths (semicolon-separated)",
-            defaultPaths);
+            defaultDownloads);
 
         var settings = new List<(string Key, string Value)>
         {

@@ -14,8 +14,6 @@ public sealed class SentinelService(
     ISentinelRateLimiter rateLimiter,
     IHttpClientFactory httpClientFactory) : BackgroundService
 {
-    private const int MaxApiRetryAttempts = 3;
-
     private readonly SentinelOptions _options = options.Value;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -59,54 +57,32 @@ public sealed class SentinelService(
 
     private async Task ForwardAsync(SentinelEvent evt, string apiKey, CancellationToken cancellationToken)
     {
-        var payload = BuildPayload(evt);
-
-        for (var attempt = 1; attempt <= MaxApiRetryAttempts; attempt++)
+        // Retry/backoff is owned by the LeontesApi HttpClient's standard resilience
+        // handler (see Program.cs). Anything that escapes here is a final failure.
+        try
         {
-            try
-            {
-                var client = httpClientFactory.CreateClient("LeontesApi");
-                using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/messages");
-                request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
-                request.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+            var client = httpClientFactory.CreateClient("LeontesApi");
+            using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/messages");
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+            request.Content = new StringContent(BuildPayload(evt), Encoding.UTF8, "application/json");
 
-                using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-                response.EnsureSuccessStatusCode();
+            using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            response.EnsureSuccessStatusCode();
 
-                await SseResponseReader.ReadSseResponseAsync(response, cancellationToken);
+            await SseResponseReader.ReadSseResponseAsync(response, cancellationToken);
 
-                logger.LogInformation(
-                    "Sentinel event escalated: {MonitorSource}/{Pattern} — {Summary}",
-                    evt.MonitorSource, evt.Pattern, evt.Summary);
-                return;
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-            {
-                return;
-            }
-            catch (Exception ex)
-            {
-                if (attempt == MaxApiRetryAttempts)
-                {
-                    logger.LogWarning(ex,
-                        "Sentinel forwarding failed after {Attempts} attempts for {MonitorSource}/{Pattern}",
-                        attempt, evt.MonitorSource, evt.Pattern);
-                    return;
-                }
-
-                logger.LogDebug(ex,
-                    "Sentinel forwarding attempt {Attempt} failed for {MonitorSource}",
-                    attempt, evt.MonitorSource);
-
-                try
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt)), cancellationToken);
-                }
-                catch (OperationCanceledException)
-                {
-                    return;
-                }
-            }
+            logger.LogInformation(
+                "Sentinel event escalated: {MonitorSource}/{Pattern} — {Summary}",
+                evt.MonitorSource, evt.Pattern, evt.Summary);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex,
+                "Sentinel forwarding failed for {MonitorSource}/{Pattern}",
+                evt.MonitorSource, evt.Pattern);
         }
     }
 

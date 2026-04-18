@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Leontes.Application.Sentinel;
+using Leontes.Infrastructure.Sentinel;
 using Microsoft.Extensions.Options;
 
 namespace Leontes.Worker.Sentinel;
@@ -77,14 +78,12 @@ public sealed class ClipboardMonitor(
             ["length"] = text.Length.ToString()
         };
 
-        var sentinelEvent = engine.Process(ClipboardContentFilterSource, text, metadata);
+        var sentinelEvent = engine.Process(ClipboardContentFilter.Source, text, metadata);
         if (sentinelEvent is null)
             return;
 
         _ = queue.TryEnqueueAsync(sentinelEvent, CancellationToken.None);
     }
-
-    private const string ClipboardContentFilterSource = "Clipboard";
 
     private static string Hash(string text)
     {
