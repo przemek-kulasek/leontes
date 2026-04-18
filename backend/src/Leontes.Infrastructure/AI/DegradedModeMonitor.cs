@@ -41,16 +41,23 @@ public sealed class DegradedModeMonitor(
                 return;
             }
 
+            var beforeProbe = availability.IsAvailable;
+            if (beforeProbe != previousAvailable)
+            {
+                await NotifyTransitionAsync(beforeProbe, stoppingToken);
+                previousAvailable = beforeProbe;
+            }
+
             if (!availability.IsAvailable)
             {
                 await ProbeAsync(stoppingToken);
-            }
 
-            var current = availability.IsAvailable;
-            if (current != previousAvailable)
-            {
-                await NotifyTransitionAsync(current, stoppingToken);
-                previousAvailable = current;
+                var afterProbe = availability.IsAvailable;
+                if (afterProbe != previousAvailable)
+                {
+                    await NotifyTransitionAsync(afterProbe, stoppingToken);
+                    previousAvailable = afterProbe;
+                }
             }
         }
     }

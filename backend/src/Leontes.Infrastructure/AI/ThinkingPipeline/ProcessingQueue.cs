@@ -31,7 +31,7 @@ public sealed class ProcessingQueue : IProcessingQueue
             });
     }
 
-    public int Count => Volatile.Read(ref _count);
+    public int Count => Math.Max(0, Volatile.Read(ref _count));
     public int Capacity { get; }
 
     public async ValueTask<EnqueueResult> EnqueueAsync(
