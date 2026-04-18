@@ -2,5 +2,5 @@ namespace Leontes.Application.ThinkingPipeline;
 
 public interface ITokenMeter
 {
-    void Record(string stage, int inputTokens, int outputTokens);
+    void Record(string feature, string operation, string modelId, int inputTokens, int outputTokens);
 }

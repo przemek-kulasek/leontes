@@ -17,6 +17,8 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<StageTrace> StageTraceSet => Set<StageTrace>();
     public DbSet<DecisionRecord> DecisionRecordSet => Set<DecisionRecord>();
     public DbSet<MetricsSummary> MetricsSummarySet => Set<MetricsSummary>();
+    public DbSet<TokenUsageRecord> TokenUsageRecordSet => Set<TokenUsageRecord>();
+    public DbSet<BudgetPolicy> BudgetPolicySet => Set<BudgetPolicy>();
 
     IQueryable<Conversation> IApplicationDbContext.Conversations => ConversationSet;
     IQueryable<Message> IApplicationDbContext.Messages => MessageSet;
@@ -28,6 +30,8 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     IQueryable<StageTrace> IApplicationDbContext.StageTraces => StageTraceSet;
     IQueryable<DecisionRecord> IApplicationDbContext.DecisionRecords => DecisionRecordSet;
     IQueryable<MetricsSummary> IApplicationDbContext.MetricsSummaries => MetricsSummarySet;
+    IQueryable<TokenUsageRecord> IApplicationDbContext.TokenUsageRecords => TokenUsageRecordSet;
+    IQueryable<BudgetPolicy> IApplicationDbContext.BudgetPolicies => BudgetPolicySet;
 
     void IApplicationDbContext.Add<TEntity>(TEntity entity) => base.Add(entity);
 

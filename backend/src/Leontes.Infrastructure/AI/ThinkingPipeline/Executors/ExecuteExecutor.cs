@@ -1,5 +1,6 @@
 using System.Text;
 using Leontes.Application.Configuration;
+using Leontes.Application.CostControl;
 using Leontes.Application.ProactiveCommunication.Events;
 using Leontes.Application.ThinkingPipeline;
 using Leontes.Domain.ThinkingPipeline;
@@ -22,6 +23,7 @@ internal sealed class ExecuteExecutor(
     IEnumerable<AITool> tools,
     ITokenMeter tokenMeter,
     IOptions<PersonaOptions> personaOptions,
+    IOptions<AiProviderOptions> aiProviderOptions,
     ILogger<ExecuteExecutor> logger)
     : Executor<ThinkingContext, ThinkingContext>("Execute")
 {
@@ -47,6 +49,8 @@ internal sealed class ExecuteExecutor(
             message, persona.Instructions);
 
         var responseBuilder = new StringBuilder();
+        var inputTokens = 0L;
+        var outputTokens = 0L;
 
         try
         {
@@ -57,12 +61,19 @@ internal sealed class ExecuteExecutor(
             {
                 foreach (var content in update.Contents)
                 {
-                    if (content is TextContent text && !string.IsNullOrEmpty(text.Text))
+                    switch (content)
                     {
-                        responseBuilder.Append(text.Text);
-                        await context.AddEventAsync(
-                            new TokenStreamEvent(text.Text),
-                            cancellationToken);
+                        case TextContent text when !string.IsNullOrEmpty(text.Text):
+                            responseBuilder.Append(text.Text);
+                            await context.AddEventAsync(
+                                new TokenStreamEvent(text.Text),
+                                cancellationToken);
+                            break;
+
+                        case UsageContent usage:
+                            inputTokens += usage.Details.InputTokenCount ?? 0;
+                            outputTokens += usage.Details.OutputTokenCount ?? 0;
+                            break;
                     }
                 }
             }
@@ -70,9 +81,13 @@ internal sealed class ExecuteExecutor(
             message.Response = responseBuilder.ToString();
             message.IsComplete = true;
 
-            // Token usage not reliably available on streaming updates;
-            // metered at zero until ITokenMeter is properly wired (feature 100)
-            tokenMeter.Record("Execute", 0, 0);
+            var modelId = aiProviderOptions.Value.Models.GetValueOrDefault("Large")?.ModelId ?? "Large";
+            tokenMeter.Record(
+                CostControlFeatures.Chat,
+                "Execute",
+                modelId,
+                (int)inputTokens,
+                (int)outputTokens);
         }
         catch (OperationCanceledException)
         {

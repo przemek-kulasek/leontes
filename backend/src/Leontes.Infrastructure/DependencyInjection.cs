@@ -6,7 +6,9 @@ using Leontes.Application.ProactiveCommunication;
 using Leontes.Application.Sentinel;
 using Leontes.Application.Telemetry;
 using Leontes.Application.ThinkingPipeline;
+using Leontes.Application.CostControl;
 using Leontes.Infrastructure.AI;
+using Leontes.Infrastructure.AI.CostControl;
 using Leontes.Infrastructure.AI.Memory;
 using Leontes.Infrastructure.AI.Telemetry;
 using Leontes.Infrastructure.AI.ThinkingPipeline;
@@ -59,6 +61,7 @@ public static class DependencyInjection
         AddAiServices(services, configuration);
         AddMemoryServices(services, configuration);
         AddTelemetryServices(services, configuration);
+        AddCostControlServices(services, configuration);
         AddThinkingPipeline(services, configuration);
         AddSignalServices(services, configuration);
         AddTelegramServices(services, configuration);
@@ -190,13 +193,29 @@ public static class DependencyInjection
         services.AddHostedService<TraceRetentionService>();
     }
 
+    private static void AddCostControlServices(IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<CostControlOptions>(
+            configuration.GetSection(CostControlOptions.SectionName));
+
+        services.AddSingleton<TokenUsageChannel>();
+        services.AddSingleton<BudgetWarningThrottler>();
+        services.AddSingleton<ITokenMeter, TokenMeter>();
+        services.AddScoped<IBudgetPolicyStore, BudgetPolicyStore>();
+        services.AddSingleton<ITokenLedger, TokenLedger>();
+        services.AddScoped<ICostDashboard, CostDashboard>();
+        services.AddSingleton<IThrottleEngine, ThrottleEngine>();
+        services.AddSingleton<IModelRouter, ModelRouter>();
+
+        services.AddHostedService<TokenUsageWriterService>();
+        services.AddHostedService<TokenUsageRetentionService>();
+    }
+
     private static void AddThinkingPipeline(IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<ThinkingPipelineOptions>(
             configuration.GetSection(ThinkingPipelineOptions.SectionName));
 
-        // Stub implementations (replaced when real features are built)
-        services.AddSingleton<ITokenMeter, NullTokenMeter>();
         services.AddSingleton<IDecisionRecorder, TelemetryDecisionRecorder>();
 
         // Checkpoint store (in-memory for now)

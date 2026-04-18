@@ -157,6 +157,8 @@ public sealed class ContextWindowManagerTests
         public IQueryable<StageTrace> StageTraces => Array.Empty<StageTrace>().AsQueryable();
         public IQueryable<DecisionRecord> DecisionRecords => Array.Empty<DecisionRecord>().AsQueryable();
         public IQueryable<MetricsSummary> MetricsSummaries => Array.Empty<MetricsSummary>().AsQueryable();
+        public IQueryable<TokenUsageRecord> TokenUsageRecords => Array.Empty<TokenUsageRecord>().AsQueryable();
+        public IQueryable<BudgetPolicy> BudgetPolicies => Array.Empty<BudgetPolicy>().AsQueryable();
 
         public void Add<TEntity>(TEntity entity) where TEntity : class => Added.Add(entity);
         public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) => Task.FromResult(1);

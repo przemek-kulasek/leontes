@@ -13,6 +13,7 @@ public static class CommandRouter
             "chat" => await ChatCommand.RunAsync(remaining),
             "trace" => await TraceCommand.RunAsync(remaining),
             "metrics" => await MetricsCommand.RunAsync(remaining),
+            "budget" => await BudgetCommand.RunAsync(remaining),
             "--help" or "-h" => ShowHelp(),
             "--version" or "-v" => ShowVersion(),
             _ => ShowUnknownCommand(command)
@@ -30,6 +31,7 @@ public static class CommandRouter
               leontes init                    Run first-time setup wizard
               leontes trace <id> [--explain]  Show the pipeline trace for a request
               leontes metrics                 Show the current metrics summary
+              leontes budget [today|history|set <n>]  Inspect or update the token budget
 
             Options:
               --help, -h           Show this help message

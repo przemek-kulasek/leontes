@@ -1,4 +1,5 @@
 using Leontes.Application.Configuration;
+using Leontes.Application.CostControl;
 using Leontes.Application.ProactiveCommunication.Events;
 using Leontes.Application.ProactiveCommunication.Requests;
 using Leontes.Application.ThinkingPipeline;
@@ -25,6 +26,7 @@ internal sealed class PlanExecutor(
     ITokenMeter tokenMeter,
     IDecisionRecorder decisionRecorder,
     IOptions<PersonaOptions> personaOptions,
+    IOptions<AiProviderOptions> aiProviderOptions,
     IOptions<ThinkingPipelineOptions> pipelineOptions,
     ILogger<PlanExecutor> logger)
     : Executor<ThinkingContext>("Plan")
@@ -57,7 +59,11 @@ internal sealed class PlanExecutor(
             var response = await chatClient.GetResponseAsync(
                 planningMessages, chatOptions, cancellationToken);
             planText = response.Text;
-            tokenMeter.Record("Plan",
+            var modelId = aiProviderOptions.Value.Models.GetValueOrDefault("Large")?.ModelId ?? "Large";
+            tokenMeter.Record(
+                CostControlFeatures.Chat,
+                "Plan",
+                modelId,
                 (int)(response.Usage?.InputTokenCount ?? 0),
                 (int)(response.Usage?.OutputTokenCount ?? 0));
         }

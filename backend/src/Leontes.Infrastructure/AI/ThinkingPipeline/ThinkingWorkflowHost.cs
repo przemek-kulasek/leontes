@@ -64,8 +64,6 @@ public sealed class ThinkingWorkflowHost(
                     case ExecutorFailedEvent failed when failed.ExecutorId is { } id:
                         failedStages.Add(id);
                         pipelineOutcome = PipelineOutcome.Failed;
-                        // Token counts are 0 here — per-stage token metering is wired in feature 100
-                        // (Cost Control & Budget Management) via ITokenMeter around IChatClient.
                         await telemetry.RecordStageCompleteAsync(
                             input.MessageId, id, StageOutcome.Failed,
                             inputTokens: 0, outputTokens: 0,
@@ -75,8 +73,6 @@ public sealed class ThinkingWorkflowHost(
 
                     case ExecutorCompletedEvent completed when completed.ExecutorId is { } id
                         && !failedStages.Contains(id):
-                        // Token counts are 0 here — per-stage token metering is wired in feature 100
-                        // (Cost Control & Budget Management) via ITokenMeter around IChatClient.
                         await telemetry.RecordStageCompleteAsync(
                             input.MessageId, id, StageOutcome.Success,
                             inputTokens: 0, outputTokens: 0, errorMessage: null, cancellationToken);

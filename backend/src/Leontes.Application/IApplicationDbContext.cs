@@ -14,6 +14,8 @@ public interface IApplicationDbContext
     IQueryable<StageTrace> StageTraces { get; }
     IQueryable<DecisionRecord> DecisionRecords { get; }
     IQueryable<MetricsSummary> MetricsSummaries { get; }
+    IQueryable<TokenUsageRecord> TokenUsageRecords { get; }
+    IQueryable<BudgetPolicy> BudgetPolicies { get; }
 
     void Add<TEntity>(TEntity entity) where TEntity : class;
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

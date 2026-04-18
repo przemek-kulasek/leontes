@@ -117,6 +117,55 @@ public sealed class LeontesApiClient : IDisposable
         return await response.Content.ReadAsStringAsync(cancellationToken);
     }
 
+    public async Task<string?> GetBudgetTodayJsonAsync(CancellationToken cancellationToken = default)
+    {
+        using var response = await _httpClient.GetAsync("/api/v1/budget/today", cancellationToken);
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            return null;
+
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync(cancellationToken);
+    }
+
+    public async Task<string?> GetBudgetHistoryJsonAsync(int days, CancellationToken cancellationToken = default)
+    {
+        using var response = await _httpClient.GetAsync($"/api/v1/budget/history?days={days}", cancellationToken);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync(cancellationToken);
+    }
+
+    public async Task<string?> SetDailyBudgetAsync(int dailyTokenBudget, CancellationToken cancellationToken = default)
+    {
+        using var policyResponse = await _httpClient.GetAsync("/api/v1/budget/policy", cancellationToken);
+        policyResponse.EnsureSuccessStatusCode();
+
+        var current = await policyResponse.Content.ReadAsStringAsync(cancellationToken);
+        using var doc = JsonDocument.Parse(current);
+        var root = doc.RootElement;
+
+        var body = new
+        {
+            dailyTokenBudget,
+            warningThresholdPercent = root.GetProperty("warningThresholdPercent").GetInt32(),
+            throttleThresholdPercent = root.GetProperty("throttleThresholdPercent").GetInt32(),
+            hardStopEnabled = root.GetProperty("hardStopEnabled").GetBoolean(),
+            hardStopThresholdPercent = root.GetProperty("hardStopThresholdPercent").GetInt32(),
+            featureAllocations = root.GetProperty("featureAllocations")
+                .EnumerateObject()
+                .ToDictionary(p => p.Name, p => p.Value.GetInt32())
+        };
+
+        var payload = JsonSerializer.Serialize(body);
+        using var request = new HttpRequestMessage(HttpMethod.Put, "/api/v1/budget/policy")
+        {
+            Content = new StringContent(payload, Encoding.UTF8, "application/json")
+        };
+
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync(cancellationToken);
+    }
+
     public void Dispose()
     {
         _httpClient.Dispose();
