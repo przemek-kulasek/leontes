@@ -33,6 +33,9 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        services.Configure<ResilienceOptions>(
+            configuration.GetSection(ResilienceOptions.SectionName));
+
         services.AddSingleton<AuditInterceptor>();
 
         var connectionString = configuration.GetConnectionString("DefaultConnection")
@@ -90,11 +93,26 @@ public static class DependencyInjection
 
         var modelsSection = configuration.GetSection("AiProvider:Models");
 
-        // Keyed IChatClient instances: Large and Small
-        services.AddKeyedSingleton<IChatClient>("Large", (_, _) =>
-            CreateChatClient(modelsSection.GetSection("Large"), configuration));
+        services.AddSingleton<ILlmAvailability, LlmAvailability>();
 
-        services.AddKeyedSingleton<IChatClient>("Small", (_, _) =>
+        // Keyed IChatClient instances: Large and Small — wrapped with resilience
+        services.AddKeyedSingleton<IChatClient>("Large", (sp, _) =>
+            new ResilientChatClient(
+                CreateChatClient(modelsSection.GetSection("Large"), configuration),
+                sp.GetRequiredService<ILlmAvailability>(),
+                sp.GetRequiredService<IOptions<ResilienceOptions>>(),
+                sp.GetRequiredService<ILogger<ResilientChatClient>>()));
+
+        services.AddKeyedSingleton<IChatClient>("Small", (sp, _) =>
+            new ResilientChatClient(
+                CreateChatClient(modelsSection.GetSection("Small"), configuration),
+                sp.GetRequiredService<ILlmAvailability>(),
+                sp.GetRequiredService<IOptions<ResilienceOptions>>(),
+                sp.GetRequiredService<ILogger<ResilientChatClient>>()));
+
+        // Unwrapped probe client used by DegradedModeMonitor so probes don't
+        // feed back into the availability signal they are trying to observe.
+        services.AddKeyedSingleton<IChatClient>("SmallProbe", (_, _) =>
             CreateChatClient(modelsSection.GetSection("Small"), configuration));
 
         // Default (unkeyed) resolves to Large for backwards compatibility
@@ -175,6 +193,9 @@ public static class DependencyInjection
 
         // Workflow host
         services.AddSingleton<ThinkingWorkflowHost>();
+
+        services.AddSingleton<IProcessingQueue, ProcessingQueue>();
+        services.AddScoped<IContextWindowManager, ContextWindowManager>();
     }
 
     private static void AddSignalServices(IServiceCollection services, IConfiguration configuration)
@@ -204,6 +225,9 @@ public static class DependencyInjection
 
         services.AddSingleton<IWorkflowSessionManager, WorkflowSessionManager>();
         services.AddScoped<IProactiveEventStore, ProactiveEventStore>();
+
+        services.AddSingleton<IRequestPortTimeoutScheduler, RequestPortTimeoutScheduler>();
+        services.AddScoped<IResilientChannelDelivery, ResilientChannelDelivery>();
     }
 
     private static void AddTelegramServices(IServiceCollection services, IConfiguration configuration)

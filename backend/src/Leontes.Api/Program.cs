@@ -4,6 +4,8 @@ using Leontes.Api.Endpoints;
 using Leontes.Api.Extensions;
 using Leontes.Application;
 using Leontes.Infrastructure;
+using Leontes.Api.HealthChecks;
+using Leontes.Infrastructure.AI;
 using Leontes.Infrastructure.AI.Memory;
 using Scalar.AspNetCore;
 using Serilog;
@@ -25,12 +27,15 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddHostedService<MemoryConsolidationService>();
+builder.Services.AddHostedService<DegradedModeMonitor>();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is required.");
 
 builder.Services.AddHealthChecks()
-    .AddNpgSql(connectionString);
+    .AddNpgSql(connectionString, name: "database")
+    .AddCheck<LlmProviderHealthCheck>("llm-provider")
+    .AddCheck<ProcessingQueueHealthCheck>("processing-queue");
 
 var app = builder.Build();
 

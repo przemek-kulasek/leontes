@@ -157,7 +157,7 @@ public sealed class ChatService(
     {
         return await _db.Messages
             .AsNoTracking()
-            .Where(m => m.ConversationId == conversationId && m.IsComplete)
+            .Where(m => m.ConversationId == conversationId && m.IsComplete && m.Role != MessageRole.Summary)
             .OrderByDescending(m => m.Created)
             .Take(limit)
             .Select(m => new ChatMessageDto(m.Id, m.Role.ToString(), m.Content, m.Created))

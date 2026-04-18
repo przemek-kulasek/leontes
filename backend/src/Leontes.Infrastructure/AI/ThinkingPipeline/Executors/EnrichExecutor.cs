@@ -99,7 +99,7 @@ internal sealed class EnrichExecutor(
 
         var messages = await db.Messages
             .AsNoTracking()
-            .Where(m => m.ConversationId == conversationId && m.IsComplete)
+            .Where(m => m.ConversationId == conversationId && m.IsComplete && m.Role != MessageRole.Summary)
             .OrderByDescending(m => m.Created)
             .Take(limit)
             .Select(m => new HistoryMessage(m.Role.ToString(), m.Content, m.Created))
