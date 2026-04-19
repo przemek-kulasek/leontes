@@ -117,6 +117,10 @@ internal sealed class TelemetryWriterService(
                         Outcome = StageOutcome.Success,
                         PipelineTrace = parent
                     };
+                    // Explicit Add forces Added state. Adding only to the navigation collection
+                    // makes EF infer state from the (non-default) Guid key, which mis-classifies
+                    // the new stage as Modified and triggers a concurrency-failed UPDATE.
+                    db.StageTraceSet.Add(stage);
                     parent.Stages.Add(stage);
                 }
                 break;
@@ -139,7 +143,7 @@ internal sealed class TelemetryWriterService(
                     ?? parent.Stages.LastOrDefault();
                 if (decisionStage is not null)
                 {
-                    decisionStage.Decisions.Add(new DecisionRecord
+                    var decisionRecord = new DecisionRecord
                     {
                         Id = Guid.NewGuid(),
                         StageTraceId = decisionStage.Id,
@@ -149,7 +153,9 @@ internal sealed class TelemetryWriterService(
                         Rationale = decision.Rationale,
                         Candidates = decision.Candidates,
                         StageTrace = decisionStage
-                    });
+                    };
+                    db.DecisionRecordSet.Add(decisionRecord);
+                    decisionStage.Decisions.Add(decisionRecord);
                 }
                 break;
         }

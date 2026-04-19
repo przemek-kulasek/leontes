@@ -46,16 +46,20 @@ internal sealed class ReflectExecutor(
             logger.LogWarning(ex, "Insight extraction failed for message {MessageId}", message.MessageId);
         }
 
-        // Store episodic observation
+        // Store episodic observation — skip screen-state turns since the captured
+        // content is point-in-time and becomes stale/misleading in future retrievals.
         try
         {
-            await memoryStore.StoreAsync(
-                $"User asked: {message.UserContent}\nAssistant answered: {message.Response}",
-                MemoryType.Observation,
-                message.MessageId,
-                message.ConversationId,
-                importance: 0.5f,
-                cancellationToken);
+            if (string.IsNullOrWhiteSpace(message.ScreenState))
+            {
+                await memoryStore.StoreAsync(
+                    $"User asked: {message.UserContent}\nAssistant answered: {message.Response}",
+                    MemoryType.Observation,
+                    message.MessageId,
+                    message.ConversationId,
+                    importance: 0.5f,
+                    cancellationToken);
+            }
         }
         catch (Exception ex)
         {

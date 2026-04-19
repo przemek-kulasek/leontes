@@ -14,7 +14,12 @@ public static class ScreenIntentClassifier
         "this dialog", "this window", "this error",
         "this form", "this menu", "this app",
         "current window", "active window", "foreground window",
-        "read my screen", "see my screen", "check my screen"
+        "read my screen", "see my screen", "check my screen",
+        "my screen", "the screen",
+        "in notepad", "my notepad", "in my notepad",
+        "what's open", "what is open",
+        "what do you see", "what can you see",
+        "what's on", "what is on"
     ];
 
     public static bool RequiresScreenContext(string? userContent)

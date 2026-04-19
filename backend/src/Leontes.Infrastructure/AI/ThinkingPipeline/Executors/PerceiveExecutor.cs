@@ -76,9 +76,10 @@ internal sealed class PerceiveExecutor(
 
             message.ScreenState = treeSerializer.Serialize(tree, serializerOptions);
 
-            logger.LogDebug(
+            logger.LogInformation(
                 "Vision: captured {Chars} chars of screen state for message {MessageId}.",
                 message.ScreenState.Length, message.MessageId);
+            logger.LogDebug("Vision tree:\n{Tree}", message.ScreenState);
         }
         catch (Exception ex)
         {

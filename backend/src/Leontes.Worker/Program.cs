@@ -19,13 +19,15 @@ builder.Services.AddSerilog(configuration =>
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// No resilience handler: the API is local, and /api/v1/messages creates a user
+// message and runs the LLM pipeline — automatic retries would duplicate work and
+// the default 10s per-attempt timeout cuts off every real LLM response.
 builder.Services.AddHttpClient("LeontesApi", client =>
 {
     var apiBaseUrl = builder.Configuration["Api:BaseUrl"] ?? "http://localhost:5154";
     client.BaseAddress = new Uri(apiBaseUrl);
     client.Timeout = TimeSpan.FromMinutes(5);
-})
-.AddStandardResilienceHandler();
+});
 
 builder.Services.AddHostedService<SentinelService>();
 builder.Services.AddHostedService<FileSystemMonitor>();

@@ -124,13 +124,29 @@ public sealed class TelegramBridgeService(
         return false;
     }
 
+    // Per-chat conversation IDs — reset when the user sends /new
+    private readonly Dictionary<string, Guid> _conversations = [];
+
     private async Task ProcessMessageAsync(IncomingMessage message, string apiKey, CancellationToken cancellationToken)
     {
         logger.LogInformation("Processing Telegram message from chat {ChatId}", message.Sender);
 
+        if (message.Content.Trim().Equals("/new", StringComparison.OrdinalIgnoreCase))
+        {
+            _conversations.Remove(message.Sender);
+            await _telegramClient.SendMessageAsync(message.Sender, "Started a new conversation.", cancellationToken);
+            return;
+        }
+
         try
         {
-            var responseText = await ForwardToApiAsync(message.Content, apiKey, cancellationToken);
+            if (!_conversations.TryGetValue(message.Sender, out var conversationId))
+            {
+                conversationId = Guid.NewGuid();
+                _conversations[message.Sender] = conversationId;
+            }
+
+            var responseText = await ForwardToApiAsync(message.Content, conversationId, apiKey, cancellationToken);
 
             if (string.IsNullOrEmpty(responseText))
             {
@@ -165,14 +181,14 @@ public sealed class TelegramBridgeService(
         }
     }
 
-    private async Task<string> ForwardToApiAsync(string content, string apiKey, CancellationToken cancellationToken)
+    private async Task<string> ForwardToApiAsync(string content, Guid conversationId, string apiKey, CancellationToken cancellationToken)
     {
         var client = httpClientFactory.CreateClient("LeontesApi");
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/messages");
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
 
-        var payload = JsonSerializer.Serialize(new { content, channel = "Telegram" });
+        var payload = JsonSerializer.Serialize(new { content, channel = "Telegram", conversationId });
         request.Content = new StringContent(payload, System.Text.Encoding.UTF8, "application/json");
 
         using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);

@@ -1,3 +1,3 @@
 namespace Leontes.Application.Chat;
 
-public sealed record SendMessageRequest(string Content, string Channel);
+public sealed record SendMessageRequest(string Content, string Channel, Guid? ConversationId = null);

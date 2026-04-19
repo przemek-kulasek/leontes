@@ -21,30 +21,44 @@ public sealed class UIAutomationTreeWalker(
 
     private readonly VisionOptions _options = options;
 
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+
     public Task<UIElement?> CaptureFocusedWindowTreeAsync(
         TreeWalkerOptions? walkerOptions = null,
         CancellationToken cancellationToken = default)
     {
         try
         {
-            var focused = AutomationElement.FocusedElement;
-            if (focused is null)
+            // Prefer the foreground window (stable across keystrokes) over AutomationElement.FocusedElement,
+            // which flips to the terminal the instant the user presses Enter in the CLI.
+            var hwnd = GetForegroundWindow();
+            AutomationElement? window = hwnd != IntPtr.Zero
+                ? AutomationElement.FromHandle(hwnd)
+                : null;
+
+            if (window is null)
             {
-                logger.LogDebug("Vision: no focused UI Automation element available.");
-                return Task.FromResult<UIElement?>(null);
+                var focused = AutomationElement.FocusedElement;
+                if (focused is null)
+                {
+                    logger.LogDebug("Vision: no foreground or focused UI Automation element available.");
+                    return Task.FromResult<UIElement?>(null);
+                }
+                window = WalkUpToWindow(focused) ?? focused;
             }
 
-            var window = WalkUpToWindow(focused) ?? focused;
+            LogForegroundTarget(window);
             return Task.FromResult(CaptureFromRoot(window, walkerOptions, cancellationToken));
         }
         catch (ElementNotAvailableException ex)
         {
-            logger.LogDebug(ex, "Vision: focused element became unavailable during capture.");
+            logger.LogDebug(ex, "Vision: foreground element became unavailable during capture.");
             return Task.FromResult<UIElement?>(null);
         }
         catch (COMException ex)
         {
-            logger.LogWarning(ex, "Vision: COM error while reading focused window.");
+            logger.LogWarning(ex, "Vision: COM error while reading foreground window.");
             return Task.FromResult<UIElement?>(null);
         }
         catch (UnauthorizedAccessException ex)
@@ -184,7 +198,7 @@ public sealed class UIAutomationTreeWalker(
             if (element.TryGetCurrentPattern(TextPattern.Pattern, out var textPattern) &&
                 textPattern is TextPattern tp)
             {
-                var text = tp.DocumentRange.GetText(maxLength: 200);
+                var text = tp.DocumentRange.GetText(maxLength: 4000);
                 return NullIfEmpty(text);
             }
         }
@@ -231,6 +245,31 @@ public sealed class UIAutomationTreeWalker(
         catch (ElementNotAvailableException) { return false; }
 
         return false;
+    }
+
+    private void LogForegroundTarget(AutomationElement element)
+    {
+        try
+        {
+            var name = SafeGet(() => element.Current.Name) ?? "(no name)";
+            var className = SafeGet(() => element.Current.ClassName) ?? "(no class)";
+            var controlType = SafeGet(() => element.Current.ControlType?.ProgrammaticName) ?? "(no type)";
+            var pid = SafeGet(() => element.Current.ProcessId);
+            string processName = "(unknown)";
+            try
+            {
+                using var process = Process.GetProcessById(pid);
+                processName = process.ProcessName;
+            }
+            catch (ArgumentException) { }
+            catch (InvalidOperationException) { }
+
+            logger.LogInformation(
+                "Vision target: process={Process} pid={Pid} class={Class} type={Type} title={Title}",
+                processName, pid, className, controlType, name);
+        }
+        catch (ElementNotAvailableException) { }
+        catch (COMException) { }
     }
 
     private static AutomationElement? WalkUpToWindow(AutomationElement element)

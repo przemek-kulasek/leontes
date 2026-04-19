@@ -95,8 +95,12 @@ Three executable projects sharing one cognitive engine and one knowledge graph:
 ### First-time setup
 
 ```bash
-# 1. Pull the AI model used for local development
+# 1. Pull the models used for local development
+#    Large tier (Plan, Execute), Small tier (Reflect, Consolidation, Sentinel),
+#    and the embedding model for memory / Synapse Graph (384 dimensions).
 ollama pull qwen2.5:7b
+ollama pull qwen2.5:3b
+ollama pull all-minilm:l6-v2
 
 # 2. Create a .env file for Docker Compose (copy the example and adjust if needed)
 cp .env.example .env

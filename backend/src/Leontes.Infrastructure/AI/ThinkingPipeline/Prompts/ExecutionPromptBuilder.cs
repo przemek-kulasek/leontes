@@ -36,6 +36,18 @@ internal static class ExecutionPromptBuilder
         var sb = new StringBuilder();
         sb.AppendLine(personaInstructions);
 
+        // Screen state goes first — before memories and history — so the model treats
+        // it as the authoritative ground truth rather than letting older context win.
+        if (!string.IsNullOrWhiteSpace(context.ScreenState))
+        {
+            sb.AppendLine();
+            sb.AppendLine("## Current Screen State (live UI Automation capture)");
+            sb.AppendLine("This is a REAL-TIME capture of the user's screen taken RIGHT NOW via Windows UI Automation. It supersedes anything mentioned about the screen earlier in this conversation.");
+            sb.AppendLine("RULE: When asked about what is on screen, report ONLY the values you see below. Do not use screen content from earlier in the conversation. Do not guess or paraphrase.");
+            sb.AppendLine();
+            sb.AppendLine(context.ScreenState);
+        }
+
         if (context.Plan is not null)
         {
             sb.AppendLine();
@@ -68,15 +80,6 @@ internal static class ExecutionPromptBuilder
             sb.AppendLine();
             sb.AppendLine($"## User Clarification");
             sb.AppendLine(context.HumanInputResponse);
-        }
-
-        if (!string.IsNullOrWhiteSpace(context.ScreenState))
-        {
-            sb.AppendLine();
-            sb.AppendLine("## Current Screen State");
-            sb.AppendLine("The user is looking at:");
-            sb.AppendLine(context.ScreenState);
-            sb.AppendLine("Use this context to answer questions about what is visible on screen.");
         }
 
         return sb.ToString();

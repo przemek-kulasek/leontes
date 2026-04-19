@@ -57,8 +57,6 @@ public sealed class SentinelService(
 
     private async Task ForwardAsync(SentinelEvent evt, string apiKey, CancellationToken cancellationToken)
     {
-        // Retry/backoff is owned by the LeontesApi HttpClient's standard resilience
-        // handler (see Program.cs). Anything that escapes here is a final failure.
         try
         {
             var client = httpClientFactory.CreateClient("LeontesApi");

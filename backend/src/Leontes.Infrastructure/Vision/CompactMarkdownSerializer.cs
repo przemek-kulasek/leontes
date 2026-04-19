@@ -81,19 +81,31 @@ public sealed class CompactMarkdownSerializer : ITreeSerializer
             Append(sb, child, indent + 1, opts, maxDepth);
     }
 
+    private static readonly HashSet<string> TextControlTypes =
+        new(StringComparer.OrdinalIgnoreCase) { "Document", "Edit", "Text" };
+
     private static string FormatElement(UIElement element, TreeSerializerOptions opts)
     {
         var type = SimplifyControlType(element.ControlType);
         var name = element.Name ?? element.AutomationId;
-        var value = element.Value is not null
-            ? $" = \"{Truncate(element.Value, 100)}\""
-            : "";
 
         var bounds = opts.IncludeBounds && element.BoundingRectangle is { } rect
             ? $" @({(int)rect.X},{(int)rect.Y},{(int)rect.Width}x{(int)rect.Height})"
             : "";
 
         var stateSuffix = element.IsEnabled ? "" : " (disabled)";
+
+        // For text-bearing controls, emit an unambiguous "text content:" label so
+        // small models don't confuse the element's accessibility name with its value.
+        if (element.Value is not null && TextControlTypes.Contains(type))
+        {
+            var content = Truncate(element.Value, 2000);
+            return $"[{type}{bounds}{stateSuffix}] text content: \"{content}\"";
+        }
+
+        var value = element.Value is not null
+            ? $" = \"{Truncate(element.Value, 2000)}\""
+            : "";
 
         if (string.IsNullOrEmpty(name) && string.IsNullOrEmpty(element.Value))
             return $"[{type}]{bounds}{stateSuffix}";

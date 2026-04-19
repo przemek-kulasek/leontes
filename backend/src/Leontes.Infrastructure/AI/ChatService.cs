@@ -28,15 +28,18 @@ public sealed class ChatService(
             throw new Domain.Exceptions.ValidationException("Invalid channel. Supported values: Cli, Signal, Telegram, Sentinel.");
         }
 
-        var conversation = await _db.Conversations
-            .OrderByDescending(c => c.LastMessageAt)
-            .FirstOrDefaultAsync(cancellationToken);
+        Conversation? conversation = request.ConversationId.HasValue
+            ? await _db.Conversations.FirstOrDefaultAsync(
+                c => c.Id == request.ConversationId.Value, cancellationToken)
+            : await _db.Conversations
+                .OrderByDescending(c => c.LastMessageAt)
+                .FirstOrDefaultAsync(cancellationToken);
 
         if (conversation is null)
         {
             conversation = new Conversation
             {
-                Id = Guid.NewGuid(),
+                Id = request.ConversationId ?? Guid.NewGuid(),
                 Title = request.Content.Length > 50
                     ? string.Concat(request.Content.AsSpan(0, 47), "...")
                     : request.Content,

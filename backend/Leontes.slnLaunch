@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "Leontes",
+    "Projects": [
+      {
+        "Path": "src\\Leontes.Api\\Leontes.Api.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "src\\Leontes.Worker\\Leontes.Worker.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]
