@@ -25,6 +25,7 @@ builder.Services.AddApiKeyAuthentication(builder.Configuration);
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddStructuralVision(builder.Configuration);
 
 builder.Services.AddHostedService<MemoryConsolidationService>();
 builder.Services.AddHostedService<DegradedModeMonitor>();

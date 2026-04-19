@@ -5,6 +5,7 @@
     <Project Path="src/Leontes.Cli/Leontes.Cli.csproj" />
     <Project Path="src/Leontes.Domain/Leontes.Domain.csproj" />
     <Project Path="src/Leontes.Infrastructure/Leontes.Infrastructure.csproj" />
+    <Project Path="src/Leontes.Vision.Windows/Leontes.Vision.Windows.csproj" />
     <Project Path="src/Leontes.Worker/Leontes.Worker.csproj" />
   </Folder>
   <Folder Name="/tests/">

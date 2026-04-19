@@ -58,6 +58,13 @@ public static class InitCommand
             return 1;
         }
 
+        if (!ConfigureVision())
+        {
+            Console.WriteLine();
+            Console.WriteLine("Could not store Structural Vision configuration in user secrets.");
+            return 1;
+        }
+
         var config = new CliConfiguration();
         using var client = new LeontesApiClient(config.BaseUrl, config.ApiKey);
 
@@ -178,6 +185,56 @@ public static class InitCommand
         return true;
     }
 
+    private static bool ConfigureVision()
+    {
+        Console.WriteLine();
+        Console.WriteLine("Structural Vision Configuration");
+        Console.WriteLine("-------------------------------");
+        Console.WriteLine("Structural Vision reads the focused window's UI Automation tree so the");
+        Console.WriteLine("assistant can answer questions about what is on your screen.");
+        Console.WriteLine("No screenshots or OCR. Disabled by default.");
+        Console.WriteLine();
+
+        var enabled = ConsolePrompt.AskWithDefault("Enable Structural Vision (y/n)", "n");
+        var enabledYes = IsYes(enabled);
+
+        var settings = new List<(string Key, string Value)>
+        {
+            ("Vision:Enabled", enabledYes ? "true" : "false"),
+            ("Vision:RequireExplicitRequest", "true"),
+            ("Vision:ExcludePasswordFields", "true")
+        };
+
+        if (!ClearUserSecretsWithPrefix(ApiUserSecretsId, "Vision:ExcludedProcesses:"))
+            return false;
+
+        if (enabledYes)
+        {
+            var defaultExclusions = "1password;keepass;bitwarden;lastpass;mstsc;vmconnect;msedge;chrome;firefox";
+            var excludeInput = ConsolePrompt.AskWithDefault(
+                "Excluded processes (semicolon-separated)",
+                defaultExclusions);
+
+            var processes = excludeInput.Split(
+                ';',
+                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            for (var i = 0; i < processes.Length; i++)
+                settings.Add(($"Vision:ExcludedProcesses:{i}", processes[i]));
+        }
+
+        foreach (var (key, value) in settings)
+        {
+            if (!SetUserSecret(ApiUserSecretsId, key, value))
+                return false;
+        }
+
+        Console.WriteLine();
+        Console.WriteLine(enabledYes
+            ? "Structural Vision enabled. Ask the assistant things like 'what error is on my screen?'"
+            : "Structural Vision disabled. You can enable it later in appsettings or re-run 'leontes init'.");
+        return true;
+    }
+
     private static bool IsYes(string value) =>
         value.StartsWith('y') || value.StartsWith('Y');
 
@@ -192,6 +249,106 @@ public static class InitCommand
         }
 
         return true;
+    }
+
+    private static bool ClearUserSecretsWithPrefix(string userSecretsId, string keyPrefix)
+    {
+        var keys = ListUserSecretKeys(userSecretsId);
+        if (keys is null)
+            return false;
+
+        foreach (var key in keys)
+        {
+            if (key.StartsWith(keyPrefix, StringComparison.Ordinal) &&
+                !RemoveUserSecret(userSecretsId, key))
+                return false;
+        }
+
+        return true;
+    }
+
+    private static IReadOnlyList<string>? ListUserSecretKeys(string userSecretsId)
+    {
+        try
+        {
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "dotnet",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            startInfo.ArgumentList.Add("user-secrets");
+            startInfo.ArgumentList.Add("list");
+            startInfo.ArgumentList.Add("--id");
+            startInfo.ArgumentList.Add(userSecretsId);
+
+            using var process = Process.Start(startInfo);
+            if (process is null)
+                return null;
+
+            var output = process.StandardOutput.ReadToEnd();
+
+            if (!process.WaitForExit(TimeSpan.FromSeconds(10)))
+            {
+                try { process.Kill(entireProcessTree: true); } catch { }
+                return null;
+            }
+
+            if (process.ExitCode != 0)
+                return null;
+
+            var keys = new List<string>();
+            foreach (var line in output.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                var separator = line.IndexOf(" = ", StringComparison.Ordinal);
+                if (separator > 0)
+                    keys.Add(line[..separator]);
+            }
+
+            return keys;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static bool RemoveUserSecret(string userSecretsId, string key)
+    {
+        try
+        {
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "dotnet",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            startInfo.ArgumentList.Add("user-secrets");
+            startInfo.ArgumentList.Add("remove");
+            startInfo.ArgumentList.Add(key);
+            startInfo.ArgumentList.Add("--id");
+            startInfo.ArgumentList.Add(userSecretsId);
+
+            using var process = Process.Start(startInfo);
+            if (process is null)
+                return false;
+
+            if (!process.WaitForExit(TimeSpan.FromSeconds(10)))
+            {
+                try { process.Kill(entireProcessTree: true); } catch { }
+                return false;
+            }
+
+            return process.ExitCode == 0;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private static bool SetUserSecret(string userSecretsId, string key, string value)

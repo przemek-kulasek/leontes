@@ -1,12 +1,17 @@
 using Leontes.Application.ProactiveCommunication.Events;
+using Leontes.Application.Vision;
 using Leontes.Domain.ThinkingPipeline;
 using Leontes.Infrastructure.AI.ThinkingPipeline.Heuristics;
 using Microsoft.Agents.AI.Workflows;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Leontes.Infrastructure.AI.ThinkingPipeline.Executors;
 
 internal sealed class PerceiveExecutor(
+    IUITreeWalker uiTreeWalker,
+    ITreeSerializer treeSerializer,
+    IOptions<VisionOptions> visionOptions,
     ILogger<PerceiveExecutor> logger)
     : Executor<ThinkingContext, ThinkingContext>("Perceive")
 {
@@ -37,10 +42,49 @@ internal sealed class PerceiveExecutor(
                 message.MessageId);
         }
 
+        await CaptureScreenStateAsync(message, cancellationToken);
+
         await context.AddEventAsync(
             new ProgressEvent("Perceive", "Perception complete", 0.1),
             cancellationToken);
 
         return message;
+    }
+
+    private async Task CaptureScreenStateAsync(ThinkingContext message, CancellationToken cancellationToken)
+    {
+        var options = visionOptions.Value;
+        if (!options.Enabled)
+            return;
+
+        if (options.RequireExplicitRequest && !ScreenIntentClassifier.RequiresScreenContext(message.UserContent))
+            return;
+
+        try
+        {
+            var walkerOptions = new TreeWalkerOptions(MaxDepth: options.MaxTreeDepth);
+            var tree = await uiTreeWalker.CaptureFocusedWindowTreeAsync(walkerOptions, cancellationToken);
+            if (tree is null)
+            {
+                logger.LogDebug("Vision: no tree captured for message {MessageId}.", message.MessageId);
+                return;
+            }
+
+            var serializerOptions = new TreeSerializerOptions(
+                MaxTokenEstimate: options.MaxTokenEstimate,
+                IncludeBounds: options.IncludeBounds);
+
+            message.ScreenState = treeSerializer.Serialize(tree, serializerOptions);
+
+            logger.LogDebug(
+                "Vision: captured {Chars} chars of screen state for message {MessageId}.",
+                message.ScreenState.Length, message.MessageId);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex,
+                "Vision: capture failed for message {MessageId}, continuing without screen state.",
+                message.MessageId);
+        }
     }
 }

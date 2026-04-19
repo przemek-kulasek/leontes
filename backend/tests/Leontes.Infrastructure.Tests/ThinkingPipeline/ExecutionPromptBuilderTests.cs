@@ -101,6 +101,31 @@ public sealed class ExecutionPromptBuilderTests
     }
 
     [Fact]
+    public void Build_WithScreenState_IncludesScreenContextInSystemPrompt()
+    {
+        var context = CreateContext("what is on my screen?");
+        context.ScreenState = "[Window: Test]\n  [Button: OK]";
+
+        var messages = ExecutionPromptBuilder.Build(context, Persona);
+        var systemText = messages[0].Text;
+
+        Assert.Contains("Current Screen State", systemText);
+        Assert.Contains("[Window: Test]", systemText);
+        Assert.Contains("[Button: OK]", systemText);
+    }
+
+    [Fact]
+    public void Build_WithoutScreenState_OmitsScreenSection()
+    {
+        var context = CreateContext("hi");
+
+        var messages = ExecutionPromptBuilder.Build(context, Persona);
+        var systemText = messages[0].Text;
+
+        Assert.DoesNotContain("Current Screen State", systemText);
+    }
+
+    [Fact]
     public void Build_SystemPromptStartsWithPersonaInstructions()
     {
         var context = CreateContext("test");

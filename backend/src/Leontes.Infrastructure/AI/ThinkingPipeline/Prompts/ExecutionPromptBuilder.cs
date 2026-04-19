@@ -70,6 +70,15 @@ internal static class ExecutionPromptBuilder
             sb.AppendLine(context.HumanInputResponse);
         }
 
+        if (!string.IsNullOrWhiteSpace(context.ScreenState))
+        {
+            sb.AppendLine();
+            sb.AppendLine("## Current Screen State");
+            sb.AppendLine("The user is looking at:");
+            sb.AppendLine(context.ScreenState);
+            sb.AppendLine("Use this context to answer questions about what is visible on screen.");
+        }
+
         return sb.ToString();
     }
 }

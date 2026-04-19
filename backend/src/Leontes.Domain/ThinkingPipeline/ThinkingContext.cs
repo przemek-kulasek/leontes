@@ -18,6 +18,13 @@ public sealed class ThinkingContext
     public IReadOnlyList<string> ExtractedEntities { get; set; } = [];
     public MessageUrgency Urgency { get; set; } = MessageUrgency.Normal;
 
+    /// <summary>
+    /// Structural Vision snapshot of the focused window at the time of the request.
+    /// Null when vision is disabled, the user did not ask about the screen, or capture failed.
+    /// Ephemeral — never persisted.
+    /// </summary>
+    public string? ScreenState { get; set; }
+
     // Populated by Enrich
     public IReadOnlyList<RelevantMemory> RelevantMemories { get; set; } = [];
     public IReadOnlyList<HistoryMessage> ConversationHistory { get; set; } = [];

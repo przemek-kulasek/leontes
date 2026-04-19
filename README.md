@@ -60,6 +60,7 @@ Three executable projects sharing one cognitive engine and one knowledge graph:
 | **Backend API** | `Leontes.Api` | Thinking Pipeline, HTTP endpoints, SSE streaming, auto-migration, rate limiting |
 | **Worker** | `Leontes.Worker` | Windows Service: Sentinel (OS monitoring) + Signal/Telegram bridges |
 | **CLI** | `Leontes.Cli` | dotnet tool (`leontes`): chat, setup wizard, privacy controls, budget dashboard |
+| **Vision (Windows)** | `Leontes.Vision.Windows` | Windows UI Automation adapter for Structural Vision. Isolates Windows-only APIs behind `IUITreeWalker` |
 
 ```
                          ┌─────────────────────────┐
@@ -171,6 +172,8 @@ Telegram lets you message Leontes from your phone via the official [Telegram Bot
 
 > **Note:** Ollama must be running before you start the API. If you installed Ollama normally it runs in the background automatically. If not, start it with `ollama serve`.
 
+> **Note:** The API targets `net10.0-windows` because Structural Vision uses Windows UI Automation. Linux/macOS hosts are not supported for the API; the CLI runs anywhere.
+
 ### Build and test
 
 ```bash
@@ -218,14 +221,14 @@ Ordered by implementation sequence:
 | 90 | Sentinel Intelligence | 📋 Specified |
 | 95 | Observability & Cognitive Telemetry | 📋 Specified |
 | 100 | Cost Control & Budget Management | 📋 Specified |
-| 105 | Structural Vision | 📋 Specified |
+| 105 | Structural Vision | ✅ Implemented |
 | 110 | Privacy & Data Governance | 📋 Specified |
 | 115 | Tool Forge | 📋 Specified |
 | 120 | Industry Protocol Standards (AG-UI, MCP, A2A) | 📋 Specified |
 
 ## Status
 
-Early development. Core infrastructure (CLI, auth, Signal, Telegram) is implemented. The cognitive architecture is fully designed across 18 feature specs, 6 implemented and 12 specified.
+Early development. Core infrastructure (CLI, auth, Signal, Telegram) is implemented. The cognitive architecture is fully designed across 18 feature specs, 7 implemented and 11 specified.
 
 ## License
 
