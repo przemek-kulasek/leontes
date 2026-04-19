@@ -6,12 +6,12 @@ public sealed class MemoryOptions
 
     /// <summary>
     /// Fixed at the schema level — changing this requires a migration and re-embedding all stored content.
-    /// Matches the output dimension of the default embedding model (all-MiniLM-L6-v2).
+    /// Matches the output dimension of the default embedding model (nomic-embed-text).
     /// </summary>
-    public const int EmbeddingDimensions = 384;
+    public const int EmbeddingDimensions = 768;
 
     public int ConsolidationIntervalHours { get; set; } = 1;
-    public string EmbeddingModelId { get; set; } = "all-minilm:l6-v2";
+    public string EmbeddingModelId { get; set; } = "nomic-embed-text";
     public string? EmbeddingEndpoint { get; set; }
     public string EmbeddingProvider { get; set; } = "ollama";
 }

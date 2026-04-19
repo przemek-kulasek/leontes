@@ -33,11 +33,19 @@ internal sealed class PlanResumeExecutor(
                 "PlanExecutor should have saved it before requesting clarification.");
         }
 
-        thinkingContext.HumanInputResponse = message;
         thinkingContext.RequiresHumanInput = false;
 
-        // Create a default plan incorporating the clarification
-        thinkingContext.Plan ??= $"Respond to user query with clarification: {message}";
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            // Timeout fired with no user response — proceed with best-effort answer
+            thinkingContext.HumanInputResponse = null;
+            thinkingContext.Plan ??= "Answer the user's question using only the information already in context. If the answer is not available, say so honestly and do not ask any follow-up questions.";
+        }
+        else
+        {
+            thinkingContext.HumanInputResponse = message;
+            thinkingContext.Plan ??= $"Respond to user query using clarification provided: {message}";
+        }
 
         await context.AddEventAsync(
             new ProgressEvent("PlanResume", "Clarification received, continuing execution", 0.55),

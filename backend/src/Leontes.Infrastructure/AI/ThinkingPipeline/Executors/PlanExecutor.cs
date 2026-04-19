@@ -1,7 +1,6 @@
 using Leontes.Application.Configuration;
 using Leontes.Application.CostControl;
 using Leontes.Application.ProactiveCommunication.Events;
-using Leontes.Application.ProactiveCommunication.Requests;
 using Leontes.Application.ThinkingPipeline;
 using Leontes.Domain.ThinkingPipeline;
 using Leontes.Infrastructure.AI.ThinkingPipeline.Heuristics;
@@ -16,10 +15,8 @@ namespace Leontes.Infrastructure.AI.ThinkingPipeline.Executors;
 
 /// <summary>
 /// Strategy formulation stage. Uses the Large LLM to create an approach plan.
-/// Can pause the workflow via RequestPort if clarification is needed.
 /// </summary>
 [SendsMessage(typeof(ThinkingContext))]
-[SendsMessage(typeof(QuestionRequest))]
 internal sealed class PlanExecutor(
     [FromKeyedServices("Large")] IChatClient chatClient,
     PersonaInstructions persona,
@@ -27,12 +24,9 @@ internal sealed class PlanExecutor(
     IDecisionRecorder decisionRecorder,
     IOptions<PersonaOptions> personaOptions,
     IOptions<AiProviderOptions> aiProviderOptions,
-    IOptions<ThinkingPipelineOptions> pipelineOptions,
     ILogger<PlanExecutor> logger)
     : Executor<ThinkingContext>("Plan")
 {
-    private const string ContextStateKey = "PlanThinkingContext";
-    private const string NeedsClarificationPrefix = "[NEEDS_CLARIFICATION]";
 
     public override async ValueTask HandleAsync(
         ThinkingContext message,
@@ -87,33 +81,6 @@ internal sealed class PlanExecutor(
                 cancellationToken);
 
             await context.SendMessageAsync(message, cancellationToken: cancellationToken);
-            return;
-        }
-
-        // Check if the LLM requests clarification
-        if (planText.StartsWith(NeedsClarificationPrefix, StringComparison.OrdinalIgnoreCase))
-        {
-            var question = planText[NeedsClarificationPrefix.Length..].Trim();
-            message.RequiresHumanInput = true;
-            message.HumanInputQuestion = question;
-
-            decisionRecorder.Record(message.MessageId, "Plan", "ClarificationNeeded",
-                "AskUser", question);
-            logger.LogInformation(
-                "Plan stage requesting clarification for message {MessageId}: {Question}",
-                message.MessageId, question);
-
-            // Save context to workflow state so PlanResume can retrieve it
-            await context.QueueStateUpdateAsync(ContextStateKey, message, "shared", cancellationToken);
-
-            // Route to QuestionPort — workflow will pause for human response
-            var questionRequest = new QuestionRequest(
-                "Clarification needed",
-                question,
-                Options: null,
-                Timeout: TimeSpan.FromMinutes(pipelineOptions.Value.DefaultQuestionTimeoutMinutes));
-
-            await context.SendMessageAsync(questionRequest, cancellationToken: cancellationToken);
             return;
         }
 

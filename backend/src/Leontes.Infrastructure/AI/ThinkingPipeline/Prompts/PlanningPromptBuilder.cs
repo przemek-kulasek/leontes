@@ -52,7 +52,7 @@ internal static class PlanningPromptBuilder
         sb.AppendLine("You are in the PLANNING stage. Your job is to analyze the user's message and create a brief plan for how to respond.");
         sb.AppendLine("- State what approach you will take (1-3 sentences)");
         sb.AppendLine("- If tools are needed, reference them as [tool:toolName]");
-        sb.AppendLine($"- Your confidence threshold is {confidenceThreshold.ToString("F2", CultureInfo.InvariantCulture)}. If your confidence falls below it, start your plan with [NEEDS_CLARIFICATION] followed by the question to ask the user");
+        sb.AppendLine($"- Your confidence threshold is {confidenceThreshold.ToString("F2", CultureInfo.InvariantCulture)}. If confidence is low, plan to answer with what is known and acknowledge any gaps — do not ask the user for clarification in the plan");
         sb.AppendLine($"- Your proactivity level is {proactivityLevel}. {DescribeProactivity(proactivityLevel)}");
         sb.AppendLine("- Keep the plan concise — it guides execution, not the user");
         return sb.ToString();
