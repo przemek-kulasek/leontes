@@ -100,7 +100,8 @@ public sealed class CompactMarkdownSerializer : ITreeSerializer
         if (element.Value is not null && TextControlTypes.Contains(type))
         {
             var content = Truncate(element.Value, 2000);
-            return $"[{type}{bounds}{stateSuffix}] text content: \"{content}\"";
+            var namePart = string.IsNullOrEmpty(name) ? "" : $": {name}";
+            return $"[{type}{namePart}{bounds}{stateSuffix}] text content: \"{content}\"";
         }
 
         var value = element.Value is not null

@@ -36,7 +36,7 @@ public sealed class CompactMarkdownSerializerTests
 
         var output = _serializer.Serialize(root);
 
-        Assert.Contains("[Edit: Editor = \"hello world\"]", output);
+        Assert.Contains("[Edit: Editor] text content: \"hello world\"", output);
     }
 
     [Fact]
