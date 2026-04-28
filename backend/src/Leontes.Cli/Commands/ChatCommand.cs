@@ -8,7 +8,7 @@ public static class ChatCommand
     public static async Task<int> RunAsync(string[] args)
     {
         Console.WriteLine("Leontes Chat");
-        Console.WriteLine("Type a message and press Enter. Type 'exit' to quit.");
+        Console.WriteLine("Type a message and press Enter. Type '/new' to start a new conversation, 'exit' to quit.");
         Console.WriteLine();
 
         var config = new CliConfiguration();
@@ -22,6 +22,8 @@ public static class ChatCommand
             return 1;
         }
 
+        var conversationId = Guid.NewGuid();
+
         while (true)
         {
             Console.Write("> ");
@@ -33,9 +35,17 @@ public static class ChatCommand
             if (input.Equals("exit", StringComparison.OrdinalIgnoreCase))
                 break;
 
+            if (input.Equals("/new", StringComparison.OrdinalIgnoreCase))
+            {
+                conversationId = Guid.NewGuid();
+                Console.WriteLine("Started a new conversation.");
+                Console.WriteLine();
+                continue;
+            }
+
             try
             {
-                await foreach (var chunk in client.SendMessageAsync(input))
+                await foreach (var chunk in client.SendMessageAsync(input, conversationId))
                 {
                     Console.Write(chunk);
                 }

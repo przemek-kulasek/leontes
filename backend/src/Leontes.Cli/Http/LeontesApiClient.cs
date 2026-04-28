@@ -39,9 +39,10 @@ public sealed class LeontesApiClient : IDisposable
 
     public async IAsyncEnumerable<string> SendMessageAsync(
         string content,
+        Guid conversationId,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var payload = JsonSerializer.Serialize(new { content, channel = "cli" });
+        var payload = JsonSerializer.Serialize(new { content, channel = "cli", conversationId });
         using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/messages")
         {
             Content = new StringContent(payload, Encoding.UTF8, "application/json")
