@@ -17,20 +17,22 @@ public sealed partial class ClipboardContentFilter : ISentinelFilter
         var text = rawEvent.Trim();
         var now = DateTime.UtcNow;
 
+        // IBAN/credential are sensitive — don't echo the value into prompts/notifications.
         if (IbanPattern().IsMatch(text))
             return Classify("iban", "Bank account number copied", SentinelPriority.Medium, now, metadata);
 
+        if (LooksLikeCredential(text))
+            return Classify("credential", "Possible credential copied", SentinelPriority.High, now, metadata);
+
+        // URL/email are safe to surface — the agent needs the actual value to be useful.
         if (EmailPattern().IsMatch(text))
-            return Classify("email", "Email address copied", SentinelPriority.Low, now, metadata);
+            return Classify("email", $"Email address copied: {text}", SentinelPriority.Low, now, metadata);
 
         if (UrlPattern().IsMatch(text))
-            return Classify("url", "URL copied", SentinelPriority.Low, now, metadata);
+            return Classify("url", $"URL copied: {text}", SentinelPriority.Low, now, metadata);
 
         if (LooksLikeStructuredData(text))
             return Classify("structured", "Structured data copied", SentinelPriority.Low, now, metadata);
-
-        if (LooksLikeCredential(text))
-            return Classify("credential", "Possible credential copied", SentinelPriority.High, now, metadata);
 
         return null;
     }

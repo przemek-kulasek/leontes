@@ -1,6 +1,9 @@
 using System.Text;
 using System.Text.Json;
+using Leontes.Application.Messaging;
 using Leontes.Application.Sentinel;
+using Leontes.Domain.Enums;
+using Leontes.Infrastructure.Telegram;
 using Leontes.Worker.Messaging;
 using Microsoft.Extensions.Options;
 
@@ -10,11 +13,18 @@ public sealed class SentinelService(
     ILogger<SentinelService> logger,
     IConfiguration configuration,
     IOptions<SentinelOptions> options,
+    IOptions<TelegramOptions> telegramOptions,
     ISentinelEventQueue queue,
     ISentinelRateLimiter rateLimiter,
-    IHttpClientFactory httpClientFactory) : BackgroundService
+    IHttpClientFactory httpClientFactory,
+    IEnumerable<IMessagingClient> messagingClients) : BackgroundService
 {
+    private const int MaxTelegramMessageLength = 4096;
+
     private readonly SentinelOptions _options = options.Value;
+    private readonly TelegramOptions _telegramOptions = telegramOptions.Value;
+    private readonly IMessagingClient? _telegramClient = messagingClients
+        .FirstOrDefault(c => c.Channel == MessageChannel.Telegram);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -67,11 +77,13 @@ public sealed class SentinelService(
             using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             response.EnsureSuccessStatusCode();
 
-            await SseResponseReader.ReadSseResponseAsync(response, cancellationToken);
+            var responseText = await SseResponseReader.ReadSseResponseAsync(response, cancellationToken);
 
             logger.LogInformation(
                 "Sentinel event escalated: {MonitorSource}/{Pattern} — {Summary}",
                 evt.MonitorSource, evt.Pattern, evt.Summary);
+
+            await PushToTelegramAsync(evt, responseText, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -84,6 +96,55 @@ public sealed class SentinelService(
         }
     }
 
+    private async Task PushToTelegramAsync(SentinelEvent evt, string responseText, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(responseText))
+        {
+            logger.LogDebug("Sentinel pipeline produced empty response for {Pattern}; nothing to push", evt.Pattern);
+            return;
+        }
+
+        if (_telegramClient is null)
+        {
+            logger.LogDebug("No Telegram client registered; skipping proactive push for {Pattern}", evt.Pattern);
+            return;
+        }
+
+        if (_telegramOptions.AllowedChatIds.Count == 0)
+        {
+            logger.LogWarning("Telegram:AllowedChatIds is empty; cannot deliver proactive Sentinel notification");
+            return;
+        }
+
+        var header = $"🔔 Sentinel · {evt.MonitorSource}/{evt.Pattern} ({evt.Priority})\n";
+        var fullText = header + responseText;
+        var chunks = MessageSplitter.Split(fullText, MaxTelegramMessageLength);
+
+        foreach (var chatId in _telegramOptions.AllowedChatIds)
+        {
+            var recipient = chatId.ToString();
+            try
+            {
+                foreach (var chunk in chunks)
+                {
+                    await _telegramClient.SendMessageAsync(recipient, chunk, cancellationToken);
+                    if (chunks.Count > 1)
+                        await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
+                }
+
+                logger.LogInformation(
+                    "Sentinel notification pushed to Telegram chat {ChatId} for {Pattern}",
+                    chatId, evt.Pattern);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex,
+                    "Failed to push Sentinel notification to Telegram chat {ChatId}",
+                    chatId);
+            }
+        }
+    }
+
     private static string BuildPayload(SentinelEvent evt)
     {
         var content = FormatContent(evt);
@@ -91,6 +152,7 @@ public sealed class SentinelService(
         {
             content,
             channel = "Sentinel",
+            conversationId = Guid.NewGuid(),
             metadata = new
             {
                 monitorSource = evt.MonitorSource,
