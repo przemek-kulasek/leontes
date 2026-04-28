@@ -53,6 +53,13 @@ internal sealed class EnrichExecutor(
             message.RelevantMemories = [.. results
                 .Where(r => r.Relevance >= config.MemoryRelevanceThreshold)
                 .Select(r => new RelevantMemory(r.Id, r.Content, r.Type, r.Relevance, r.CreatedAt))];
+
+            // Surface threshold tuning data: if many candidates are filtered out the threshold may be too strict.
+            var topRelevance = results.Count > 0 ? results.Max(r => r.Relevance) : 0f;
+            logger.LogInformation(
+                "Memory search for {MessageId}: {Candidates} candidates, {Kept} kept (threshold {Threshold:F2}, top relevance {TopRelevance:F2})",
+                message.MessageId, results.Count, message.RelevantMemories.Count,
+                config.MemoryRelevanceThreshold, topRelevance);
         }
         catch (Exception ex)
         {

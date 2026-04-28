@@ -34,7 +34,7 @@ public sealed class PlanningPromptBuilderTests
 
         Assert.Contains("PLANNING stage", systemText);
         Assert.Contains("[tool:toolName]", systemText);
-        Assert.Contains("[NEEDS_CLARIFICATION]", systemText);
+        Assert.Contains("do not ask the user for clarification", systemText);
     }
 
     [Fact]

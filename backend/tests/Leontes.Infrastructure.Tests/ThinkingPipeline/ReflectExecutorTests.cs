@@ -49,6 +49,26 @@ public sealed class ReflectExecutorTests
     }
 
     [Fact]
+    public async Task HandleAsync_ScreenStatePresent_StillStoresObservation()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var memoryStore = new RecordingMemoryStore();
+        var executor = CreateExecutor(memoryStore);
+        var context = CreateContext();
+        context.Response = "I see the editor is open.";
+        context.IsComplete = true;
+        context.ScreenState = "# Window: VSCode\n- Editor: foo.cs";
+
+        await executor.HandleAsync(context, new FakeWorkflowContext(), ct);
+
+        var observation = memoryStore.Stored.FirstOrDefault(s => s.Type == MemoryType.Observation);
+        Assert.NotNull(observation);
+        Assert.Contains(context.UserContent, observation.Content);
+        Assert.Contains(context.Response, observation.Content);
+        Assert.DoesNotContain("VSCode", observation.Content);
+    }
+
+    [Fact]
     public async Task HandleAsync_CompleteResponse_ExtractsInsights()
     {
         var ct = TestContext.Current.CancellationToken;

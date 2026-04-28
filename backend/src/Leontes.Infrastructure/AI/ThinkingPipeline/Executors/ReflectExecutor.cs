@@ -46,20 +46,18 @@ internal sealed class ReflectExecutor(
             logger.LogWarning(ex, "Insight extraction failed for message {MessageId}", message.MessageId);
         }
 
-        // Store episodic observation — skip screen-state turns since the captured
-        // content is point-in-time and becomes stale/misleading in future retrievals.
+        // Always store the user/assistant text so future turns have episodic recall.
+        // The screen-state tree itself is intentionally NOT stored — it is point-in-time
+        // and becomes stale — but the conversation text remains useful regardless.
         try
         {
-            if (string.IsNullOrWhiteSpace(message.ScreenState))
-            {
-                await memoryStore.StoreAsync(
-                    $"User asked: {message.UserContent}\nAssistant answered: {message.Response}",
-                    MemoryType.Observation,
-                    message.MessageId,
-                    message.ConversationId,
-                    importance: 0.5f,
-                    cancellationToken);
-            }
+            await memoryStore.StoreAsync(
+                $"User asked: {message.UserContent}\nAssistant answered: {message.Response}",
+                MemoryType.Observation,
+                message.MessageId,
+                message.ConversationId,
+                importance: 0.5f,
+                cancellationToken);
         }
         catch (Exception ex)
         {

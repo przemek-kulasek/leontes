@@ -116,19 +116,26 @@ public static class DependencyInjection
         services.AddSingleton<ILlmAvailability, LlmAvailability>();
 
         // Keyed IChatClient instances: Large and Small — wrapped with resilience
+        // and function-invocation so tool calls auto-execute end-to-end.
         services.AddKeyedSingleton<IChatClient>("Large", (sp, _) =>
-            new ResilientChatClient(
-                CreateChatClient(modelsSection.GetSection("Large"), configuration),
-                sp.GetRequiredService<ILlmAvailability>(),
-                sp.GetRequiredService<IOptions<ResilienceOptions>>(),
-                sp.GetRequiredService<ILogger<ResilientChatClient>>()));
+            new ChatClientBuilder(
+                    new ResilientChatClient(
+                        CreateChatClient(modelsSection.GetSection("Large"), configuration),
+                        sp.GetRequiredService<ILlmAvailability>(),
+                        sp.GetRequiredService<IOptions<ResilienceOptions>>(),
+                        sp.GetRequiredService<ILogger<ResilientChatClient>>()))
+                .UseFunctionInvocation(sp.GetService<ILoggerFactory>())
+                .Build());
 
         services.AddKeyedSingleton<IChatClient>("Small", (sp, _) =>
-            new ResilientChatClient(
-                CreateChatClient(modelsSection.GetSection("Small"), configuration),
-                sp.GetRequiredService<ILlmAvailability>(),
-                sp.GetRequiredService<IOptions<ResilienceOptions>>(),
-                sp.GetRequiredService<ILogger<ResilientChatClient>>()));
+            new ChatClientBuilder(
+                    new ResilientChatClient(
+                        CreateChatClient(modelsSection.GetSection("Small"), configuration),
+                        sp.GetRequiredService<ILlmAvailability>(),
+                        sp.GetRequiredService<IOptions<ResilienceOptions>>(),
+                        sp.GetRequiredService<ILogger<ResilientChatClient>>()))
+                .UseFunctionInvocation(sp.GetService<ILoggerFactory>())
+                .Build());
 
         // Unwrapped probe client used by DegradedModeMonitor so probes don't
         // feed back into the availability signal they are trying to observe.
@@ -142,18 +149,33 @@ public static class DependencyInjection
         // Load persona instructions from the output directory (CopyToOutputDirectory)
         var personaFile = configuration["Persona:InstructionsFile"] ?? "persona.md";
         var personaPath = Path.Combine(AppContext.BaseDirectory, personaFile);
-        var instructions = File.Exists(personaPath)
-            ? File.ReadAllText(personaPath)
-            : "You are Leontes, a helpful personal AI assistant. Be concise and accurate.";
+        var personaInstructions = File.Exists(personaPath)
+            ? new PersonaInstructions(File.ReadAllText(personaPath))
+            : new PersonaInstructions(
+                "You are Leontes, a helpful personal AI assistant. Be concise and accurate.",
+                IsFromFallback: true,
+                AttemptedPath: personaPath);
 
-        services.AddSingleton(new PersonaInstructions(instructions));
+        services.AddSingleton(personaInstructions);
+        services.AddHostedService<PersonaLoadWarningService>();
+
+        // Single source of truth for AITool registration.
+        // ExecuteExecutor resolves IEnumerable<AITool> for its ChatOptions.Tools, and
+        // the standalone AIAgent below shares the same set, so adding a tool once
+        // surfaces it in both code paths.
+        services.AddSingleton<AITool>(_ =>
+            AIFunctionFactory.Create(CurrentDateTimeTool.GetCurrentDateTime));
+        services.AddSingleton<AITool>(_ =>
+            AIFunctionFactory.Create(ListFilesTool.ListFiles));
+        services.AddSingleton<AITool>(_ =>
+            AIFunctionFactory.Create(ReadFileTool.ReadFile));
 
         services.AddSingleton<AIAgent>(sp =>
             new ChatClientAgent(
                 sp.GetRequiredKeyedService<IChatClient>("Large"),
                 instructions: sp.GetRequiredService<PersonaInstructions>().Instructions,
                 name: "Leontes",
-                tools: [AIFunctionFactory.Create(CurrentDateTimeTool.GetCurrentDateTime)],
+                tools: [.. sp.GetServices<AITool>()],
                 loggerFactory: sp.GetService<ILoggerFactory>()));
 
         services.AddScoped<IChatService, ChatService>();

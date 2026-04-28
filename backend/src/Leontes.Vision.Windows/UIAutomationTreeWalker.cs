@@ -13,20 +13,47 @@ namespace Leontes.Vision.Windows;
 /// Walks the native accessibility tree of the focused window using the ControlView walker,
 /// redacts password fields, and honors the configured process exclusion list.
 /// </summary>
-public sealed class UIAutomationTreeWalker(
-    VisionOptions options,
-    ILogger<UIAutomationTreeWalker> logger) : IUITreeWalker
+public sealed class UIAutomationTreeWalker : IUITreeWalker, IDisposable
 {
     private const string PasswordPlaceholder = "[password field]";
 
-    private readonly VisionOptions _options = options;
+    private readonly VisionOptions _options;
+    private readonly ILogger<UIAutomationTreeWalker> _logger;
+    private readonly StaTaskScheduler _staScheduler;
+
+    public UIAutomationTreeWalker(VisionOptions options, ILogger<UIAutomationTreeWalker> logger)
+    {
+        _options = options;
+        _logger = logger;
+        _staScheduler = new StaTaskScheduler();
+    }
+
+    public void Dispose() => _staScheduler.Dispose();
 
     [DllImport("user32.dll")]
     private static extern IntPtr GetForegroundWindow();
 
     public Task<UIElement?> CaptureFocusedWindowTreeAsync(
         TreeWalkerOptions? walkerOptions = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        RunOnStaAsync(() => CaptureFocusedWindowTreeCore(walkerOptions, cancellationToken), cancellationToken);
+
+    public Task<UIElement?> CaptureWindowTreeAsync(
+        int processId,
+        TreeWalkerOptions? walkerOptions = null,
+        CancellationToken cancellationToken = default) =>
+        RunOnStaAsync(() => CaptureWindowTreeCore(processId, walkerOptions, cancellationToken), cancellationToken);
+
+    private Task<UIElement?> RunOnStaAsync(Func<UIElement?> work, CancellationToken cancellationToken) =>
+        Task.Factory.StartNew(
+            work,
+            cancellationToken,
+            TaskCreationOptions.DenyChildAttach,
+            _staScheduler);
+
+    private UIElement? CaptureFocusedWindowTreeCore(
+        TreeWalkerOptions? walkerOptions,
+        CancellationToken cancellationToken)
     {
         try
         {
@@ -42,52 +69,52 @@ public sealed class UIAutomationTreeWalker(
                 var focused = AutomationElement.FocusedElement;
                 if (focused is null)
                 {
-                    logger.LogDebug("Vision: no foreground or focused UI Automation element available.");
-                    return Task.FromResult<UIElement?>(null);
+                    _logger.LogDebug("Vision: no foreground or focused UI Automation element available.");
+                    return null;
                 }
                 window = WalkUpToWindow(focused) ?? focused;
             }
 
             LogForegroundTarget(window);
-            return Task.FromResult(CaptureFromRoot(window, walkerOptions, cancellationToken));
+            return CaptureFromRoot(window, walkerOptions, cancellationToken);
         }
         catch (ElementNotAvailableException ex)
         {
-            logger.LogDebug(ex, "Vision: foreground element became unavailable during capture.");
-            return Task.FromResult<UIElement?>(null);
+            _logger.LogDebug(ex, "Vision: foreground element became unavailable during capture.");
+            return null;
         }
         catch (COMException ex)
         {
-            logger.LogWarning(ex, "Vision: COM error while reading foreground window.");
-            return Task.FromResult<UIElement?>(null);
+            _logger.LogWarning(ex, "Vision: COM error while reading foreground window.");
+            return null;
         }
         catch (UnauthorizedAccessException ex)
         {
-            logger.LogWarning(ex, "Vision: access denied reading UI Automation tree.");
-            return Task.FromResult<UIElement?>(null);
+            _logger.LogWarning(ex, "Vision: access denied reading UI Automation tree.");
+            return null;
         }
     }
 
-    public Task<UIElement?> CaptureWindowTreeAsync(
+    private UIElement? CaptureWindowTreeCore(
         int processId,
-        TreeWalkerOptions? walkerOptions = null,
-        CancellationToken cancellationToken = default)
+        TreeWalkerOptions? walkerOptions,
+        CancellationToken cancellationToken)
     {
         try
         {
             var condition = new PropertyCondition(AutomationElement.ProcessIdProperty, processId);
             var root = AutomationElement.RootElement.FindFirst(TreeScope.Children, condition);
-            return Task.FromResult(CaptureFromRoot(root, walkerOptions, cancellationToken));
+            return CaptureFromRoot(root, walkerOptions, cancellationToken);
         }
         catch (ElementNotAvailableException ex)
         {
-            logger.LogDebug(ex, "Vision: element for process {ProcessId} unavailable.", processId);
-            return Task.FromResult<UIElement?>(null);
+            _logger.LogDebug(ex, "Vision: element for process {ProcessId} unavailable.", processId);
+            return null;
         }
         catch (COMException ex)
         {
-            logger.LogWarning(ex, "Vision: COM error while reading window for process {ProcessId}.", processId);
-            return Task.FromResult<UIElement?>(null);
+            _logger.LogWarning(ex, "Vision: COM error while reading window for process {ProcessId}.", processId);
+            return null;
         }
     }
 
@@ -101,7 +128,7 @@ public sealed class UIAutomationTreeWalker(
 
         if (IsProcessExcluded(root))
         {
-            logger.LogDebug("Vision: skipping capture — process is on exclusion list.");
+            _logger.LogDebug("Vision: skipping capture — process is on exclusion list.");
             return null;
         }
 
@@ -264,7 +291,7 @@ public sealed class UIAutomationTreeWalker(
             catch (ArgumentException) { }
             catch (InvalidOperationException) { }
 
-            logger.LogInformation(
+            _logger.LogInformation(
                 "Vision target: process={Process} pid={Pid} class={Class} type={Type} title={Title}",
                 processName, pid, className, controlType, name);
         }

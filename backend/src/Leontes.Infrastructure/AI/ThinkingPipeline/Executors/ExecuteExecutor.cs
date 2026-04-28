@@ -32,6 +32,16 @@ internal sealed class ExecuteExecutor(
         IWorkflowContext context,
         CancellationToken cancellationToken = default)
     {
+        // Upstream stage (e.g. throttled Plan) may have already produced a final
+        // response — in that case skip the LLM call and pass through.
+        if (message.IsComplete && !string.IsNullOrEmpty(message.Response))
+        {
+            await context.AddEventAsync(
+                new ProgressEvent("Execute", "Skipped — response already finalized upstream", 1.0),
+                cancellationToken);
+            return message;
+        }
+
         await context.AddEventAsync(
             new ProgressEvent("Execute", "Generating response...", 0.6),
             cancellationToken);
@@ -39,10 +49,15 @@ internal sealed class ExecuteExecutor(
         var stageSettings = personaOptions.Value.StageSettings
             .GetValueOrDefault("Execute", new StageSettings { ModelTier = "Large", Temperature = 0.5f });
 
+        // Honor Plan's tool selection when present; otherwise let the model see all tools.
+        var availableTools = message.SelectedTools.Count == 0
+            ? tools
+            : tools.Where(t => message.SelectedTools.Contains(t.Name, StringComparer.OrdinalIgnoreCase));
+
         var chatOptions = new ChatOptions
         {
             Temperature = stageSettings.Temperature,
-            Tools = [.. tools]
+            Tools = [.. availableTools]
         };
 
         var executionMessages = ExecutionPromptBuilder.Build(
