@@ -46,24 +46,30 @@ internal sealed class ReflectExecutor(
             logger.LogWarning(ex, "Insight extraction failed for message {MessageId}", message.MessageId);
         }
 
-        // Always store the user/assistant text so future turns have episodic recall.
-        // The screen-state tree itself is intentionally NOT stored — it is point-in-time
-        // and becomes stale — but the conversation text remains useful regardless.
-        try
+        // Persist only the user's own statements as durable observations.
+        // The assistant's free-form response is intentionally NOT stored — it can
+        // hallucinate, hedge, or contradict the user, and we don't want past wrong
+        // answers to come back as authoritative "context" in future conversations.
+        // Questions and trivial inputs are also skipped — they aren't facts worth
+        // recalling cross-conversation.
+        if (IsWorthRemembering(message.UserContent))
         {
-            await memoryStore.StoreAsync(
-                $"User asked: {message.UserContent}\nAssistant answered: {message.Response}",
-                MemoryType.Observation,
-                message.MessageId,
-                message.ConversationId,
-                importance: 0.5f,
-                cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex,
-                "Failed to store observation memory for message {MessageId}",
-                message.MessageId);
+            try
+            {
+                await memoryStore.StoreAsync(
+                    $"User stated: {message.UserContent.Trim()}",
+                    MemoryType.Observation,
+                    message.MessageId,
+                    message.ConversationId,
+                    importance: 0.5f,
+                    cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex,
+                    "Failed to store observation memory for message {MessageId}",
+                    message.MessageId);
+            }
         }
 
         // Promote extracted insights to insight memories
@@ -122,5 +128,24 @@ internal sealed class ReflectExecutor(
 
         // This is the final executor — auto-yields as workflow output
         return message;
+    }
+
+    private static bool IsWorthRemembering(string userContent)
+    {
+        if (string.IsNullOrWhiteSpace(userContent))
+            return false;
+
+        var trimmed = userContent.Trim();
+
+        // Questions are queries, not facts — recalling them as "context" only
+        // pollutes future memory searches with the user's previous unanswered asks.
+        if (trimmed.EndsWith('?'))
+            return false;
+
+        // Filter out trivial acknowledgements that carry no recallable fact.
+        if (trimmed.Length < 4)
+            return false;
+
+        return true;
     }
 }

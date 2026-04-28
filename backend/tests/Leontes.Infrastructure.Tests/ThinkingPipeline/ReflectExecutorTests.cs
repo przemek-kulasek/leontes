@@ -44,7 +44,7 @@ public sealed class ReflectExecutorTests
         Assert.Contains(memoryStore.Stored, s => s.Type == MemoryType.Observation);
         var observation = memoryStore.Stored.First(s => s.Type == MemoryType.Observation);
         Assert.Contains(context.UserContent, observation.Content);
-        Assert.Contains(context.Response, observation.Content);
+        Assert.DoesNotContain(context.Response, observation.Content);
         Assert.Equal(context.ConversationId, observation.SourceConversationId);
     }
 
@@ -64,8 +64,38 @@ public sealed class ReflectExecutorTests
         var observation = memoryStore.Stored.FirstOrDefault(s => s.Type == MemoryType.Observation);
         Assert.NotNull(observation);
         Assert.Contains(context.UserContent, observation.Content);
-        Assert.Contains(context.Response, observation.Content);
+        Assert.DoesNotContain(context.Response, observation.Content);
         Assert.DoesNotContain("VSCode", observation.Content);
+    }
+
+    [Fact]
+    public async Task HandleAsync_UserContentIsQuestion_DoesNotStoreObservation()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var memoryStore = new RecordingMemoryStore();
+        var executor = CreateExecutor(memoryStore);
+        var context = CreateContext(userContent: "what is my favorite color?");
+        context.Response = "I don't know yet.";
+        context.IsComplete = true;
+
+        await executor.HandleAsync(context, new FakeWorkflowContext(), ct);
+
+        Assert.DoesNotContain(memoryStore.Stored, s => s.Type == MemoryType.Observation);
+    }
+
+    [Fact]
+    public async Task HandleAsync_TrivialUserContent_DoesNotStoreObservation()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        var memoryStore = new RecordingMemoryStore();
+        var executor = CreateExecutor(memoryStore);
+        var context = CreateContext(userContent: "ok");
+        context.Response = "Acknowledged.";
+        context.IsComplete = true;
+
+        await executor.HandleAsync(context, new FakeWorkflowContext(), ct);
+
+        Assert.DoesNotContain(memoryStore.Stored, s => s.Type == MemoryType.Observation);
     }
 
     [Fact]
@@ -199,11 +229,11 @@ public sealed class ReflectExecutorTests
         { }
     }
 
-    private static ThinkingContext CreateContext() => new()
+    private static ThinkingContext CreateContext(string userContent = "test message") => new()
     {
         MessageId = Guid.NewGuid(),
         ConversationId = Guid.NewGuid(),
-        UserContent = "test message",
+        UserContent = userContent,
         Channel = "Cli"
     };
 
