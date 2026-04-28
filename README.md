@@ -46,7 +46,6 @@ The result: your agent notices when you copy an IBAN and asks if you want to fin
 | **Confidence Scoring** | Signals how certain it is (0–1). Asks for clarification when uncertain, proceeds confidently when sure |
 | **Show Your Work** | Every decision is traced. Ask "Why did you do that?" and get a real answer from stored pipeline traces |
 | **Cost Aware** | Token budgets per feature, two model tiers (Large for reasoning, Small for summarization), budget-driven downgrading, throttling before you hit limits |
-| **Privacy First** | All monitoring is opt-in. Review, export, or delete any stored data. "Forget Project X" cascades across all tables |
 | **Multi-Channel** | CLI + Signal (E2E encrypted) + Telegram. Same brain, same memory, any device |
 | **Agent Persona** | Configurable personality, tone, and boundaries in `persona.md`. Two model tiers (Large for reasoning, Small for summarization). Per-stage temperature. Budget-driven tier downgrading |
 | **Protocol Standards** | AG-UI (web frontends), MCP (external tool servers), A2A (agent-to-agent). All via Microsoft Agent Framework |
@@ -154,7 +153,7 @@ leontes chat
 
 Once the CLI starts, type a message and hit Enter. That's it.
 
-The **Worker** (Sentinel + Signal/Telegram bridges) is optional during development. Most of its functionality is still in progress. If you want to run it:
+The **Worker** (Sentinel + Signal/Telegram bridges) is optional during development. If you want to run it:
 
 ```bash
 dotnet run --project backend/src/Leontes.Worker --configuration Release  # Windows only
@@ -217,22 +216,21 @@ Ordered by implementation sequence:
 | 40 | API Authentication | ✅ Implemented |
 | 50 | Signal Support | ✅ Implemented |
 | 60 | Telegram Support | ✅ Implemented |
-| 65 | Proactive Communication | 📋 Specified |
-| 75 | Agent Persona & Model Configuration | 📋 Specified |
-| 70 | Thinking Pipeline | 📋 Specified |
-| 85 | Error Recovery & Resilience | 📋 Specified |
-| 80 | Hierarchical Memory | 📋 Specified |
-| 90 | Sentinel Intelligence | 📋 Specified |
-| 95 | Observability & Cognitive Telemetry | 📋 Specified |
-| 100 | Cost Control & Budget Management | 📋 Specified |
+| 65 | Proactive Communication | ✅ Implemented |
+| 70 | Thinking Pipeline | ✅ Implemented |
+| 75 | Agent Persona & Model Configuration | ✅ Implemented |
+| 80 | Hierarchical Memory | ✅ Implemented |
+| 85 | Error Recovery & Resilience | ✅ Implemented |
+| 90 | Sentinel Intelligence | ✅ Implemented |
+| 95 | Observability & Cognitive Telemetry | ✅ Implemented |
+| 100 | Cost Control & Budget Management | ✅ Implemented |
 | 105 | Structural Vision | ✅ Implemented |
-| 110 | Privacy & Data Governance | 📋 Specified |
 | 115 | Tool Forge | 📋 Specified |
 | 120 | Industry Protocol Standards (AG-UI, MCP, A2A) | 📋 Specified |
 
 ## Status
 
-Early development. Core infrastructure (CLI, auth, Signal, Telegram) is implemented. The cognitive architecture is fully designed across 18 feature specs, 7 implemented and 11 specified.
+Active development. The 5-stage Thinking Pipeline, Hierarchical Memory, Sentinel, Structural Vision, Persona, Resilience, Observability, and Cost Control are implemented and exercised end-to-end against a real LLM. Tool Forge and the AG-UI / MCP / A2A protocol layers remain specified and are next on the roadmap.
 
 ## License
 
