@@ -104,6 +104,8 @@ public static class DependencyInjection
         services.AddSingleton<IEmbeddingService, EmbeddingService>();
         services.AddSingleton<IMemoryStore, PgVectorMemoryStore>();
         services.AddSingleton<ISynapseGraph, PgVectorSynapseGraph>();
+
+        services.AddHostedService<MemoryConsolidationService>();
     }
 
     private static void AddAiServices(IServiceCollection services, IConfiguration configuration)
@@ -158,6 +160,7 @@ public static class DependencyInjection
 
         services.AddSingleton(personaInstructions);
         services.AddHostedService<PersonaLoadWarningService>();
+        services.AddHostedService<DegradedModeMonitor>();
 
         // Single source of truth for AITool registration.
         // ExecuteExecutor resolves IEnumerable<AITool> for its ChatOptions.Tools, and
