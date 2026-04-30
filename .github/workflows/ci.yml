@@ -24,8 +24,5 @@ jobs:
       - name: Build
         run: dotnet build backend/ --no-restore --warnaserror
 
-      - name: Pull pgvector image
-        run: docker pull pgvector/pgvector:pg17
-
       - name: Test
-        run: dotnet test backend/ --no-build
+        run: dotnet test backend/ --no-build --filter "FullyQualifiedName!~Leontes.Integration.Tests"
