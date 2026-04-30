@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: write
-  packages: write
 
 jobs:
   release:
@@ -35,33 +34,29 @@ jobs:
       - name: Test
         run: dotnet test backend/ --no-build --filter "FullyQualifiedName!~Leontes.Integration.Tests"
 
-      - name: Pack CLI tool
-        run: dotnet pack backend/src/Leontes.Cli --no-build --output nupkg -p:Version=${{ steps.version.outputs.ver }}
-
-      - name: Push CLI to GitHub Packages
-        run: dotnet nuget push "nupkg/Leontes.Cli.${{ steps.version.outputs.ver }}.nupkg" --source "https://nuget.pkg.github.com/przemek-kulasek/index.json" --api-key ${{ secrets.GITHUB_TOKEN }}
-
       - name: Publish API
         run: dotnet publish backend/src/Leontes.Api --configuration Release --runtime win-x64 --self-contained true -p:Version=${{ steps.version.outputs.ver }} --output publish/api
 
       - name: Publish Worker
         run: dotnet publish backend/src/Leontes.Worker --configuration Release --runtime win-x64 --self-contained true -p:Version=${{ steps.version.outputs.ver }} --output publish/worker
 
-      - name: Zip API
-        shell: pwsh
-        run: Compress-Archive -Path publish/api/* -DestinationPath "leontes-api-win-x64-${{ steps.version.outputs.ver }}.zip"
+      - name: Publish CLI
+        run: dotnet publish backend/src/Leontes.Cli --configuration Release --runtime win-x64 --self-contained true -p:Version=${{ steps.version.outputs.ver }} --output publish/cli
 
-      - name: Zip Worker
+      - name: Zip artifacts
         shell: pwsh
-        run: Compress-Archive -Path publish/worker/* -DestinationPath "leontes-worker-win-x64-${{ steps.version.outputs.ver }}.zip"
+        run: |
+          Compress-Archive -Path publish/api/*   -DestinationPath "leontes-api-win-x64-${{ steps.version.outputs.ver }}.zip"
+          Compress-Archive -Path publish/worker/* -DestinationPath "leontes-worker-win-x64-${{ steps.version.outputs.ver }}.zip"
+          Compress-Archive -Path publish/cli/*   -DestinationPath "leontes-cli-win-x64-${{ steps.version.outputs.ver }}.zip"
 
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create ${{ github.ref_name }} \
-            "nupkg/Leontes.Cli.${{ steps.version.outputs.ver }}.nupkg" \
             "leontes-api-win-x64-${{ steps.version.outputs.ver }}.zip" \
             "leontes-worker-win-x64-${{ steps.version.outputs.ver }}.zip" \
+            "leontes-cli-win-x64-${{ steps.version.outputs.ver }}.zip" \
             --generate-notes \
             --title "Leontes ${{ github.ref_name }}"
