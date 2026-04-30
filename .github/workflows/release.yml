@@ -53,6 +53,7 @@ jobs:
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
         run: |
           gh release create ${{ github.ref_name }} \
             "leontes-api-win-x64-${{ steps.version.outputs.ver }}.zip" \
