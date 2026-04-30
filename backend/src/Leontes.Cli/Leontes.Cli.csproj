@@ -5,6 +5,9 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>leontes</ToolCommandName>
     <UserSecretsId>b3a7f1d2-8c4e-4a9b-9f6d-2e5c8b1a0d3f</UserSecretsId>
+    <PackageId>Leontes.Cli</PackageId>
+    <Description>Leontes — proactive OS agent CLI. Chat with your agent from the terminal.</Description>
+    <PackageTags>ai;agent;cli;dotnet-tool</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
