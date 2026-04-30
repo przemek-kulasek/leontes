@@ -81,6 +81,102 @@ Three executable projects sharing one cognitive engine and one knowledge graph:
 
 **Inspired by:** Global Workspace Theory (Dehaene), Dual-Process Theory (Kahneman), Generative Agents (Park et al.), Voyager (Wang et al.), Free Energy Principle (Friston).
 
+## Installation
+
+### Prerequisites
+
+| Tool | Version | Purpose |
+|------|---------|---------|
+| [Docker Desktop](https://docs.docker.com/get-docker/) | Latest | Run PostgreSQL locally |
+| [Ollama](https://ollama.com/) | Latest | Local LLM inference |
+
+### 1. Pull the models
+
+```bash
+ollama pull qwen2.5:7b-instruct
+ollama pull phi3:mini
+ollama pull nomic-embed-text
+```
+
+> Ollama must be running before you start the API. If you installed Ollama normally it runs in the background automatically. If not, start it with `ollama serve`.
+
+### 2. Start PostgreSQL
+
+```bash
+docker run -d --name leontes-db \
+  -e POSTGRES_DB=leontes \
+  -e POSTGRES_USER=leontes \
+  -e POSTGRES_PASSWORD=leontes \
+  -p 5432:5432 \
+  pgvector/pgvector:pg17
+```
+
+### 3. Download the release
+
+Go to the [Releases](../../releases) page and download:
+
+- `leontes-api-win-x64-<version>.zip` → extract to a folder, e.g. `C:\leontes\api`
+- `leontes-worker-win-x64-<version>.zip` → extract to `C:\leontes\worker` *(optional — Sentinel + Signal/Telegram)*
+- `leontes-cli-win-x64-<version>.zip` → extract to `C:\leontes\cli`
+
+### 4. Generate an API key
+
+Open PowerShell and generate a random key:
+
+```powershell
+[Convert]::ToBase64String([System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
+```
+
+Copy the output — you'll use it in the next two steps.
+
+> **When to use `leontes init`:** Run it from a dev setup (source build) when you want to customize AI model IDs, change Ollama endpoints, configure Sentinel monitors, or enable Structural Vision. It is not needed here — the defaults in `appsettings.json` work out of the box with Ollama. It also requires the .NET SDK (calls `dotnet user-secrets` internally) so it cannot run in a SDK-free release install. To override any setting without the SDK, use environment variables (e.g. `AiProvider__Models__Large__ModelId=llama3`).
+
+### 5. Configure and start the API
+
+Set environment variables, then run the API. It auto-migrates the database on first start.
+
+```powershell
+$env:ConnectionStrings__DefaultConnection = "Host=localhost;Port=5432;Database=leontes;Username=leontes;Password=leontes"
+$env:Authentication__ApiKey = "<your-api-key>"
+C:\leontes\api\Leontes.Api.exe
+```
+
+> **Note:** Environment variables set with `$env:` only last for the current PowerShell session. To make them permanent, set them via Windows → System Properties → Advanced → Environment Variables → System Variables.
+
+### 6. Configure the CLI
+
+The CLI reads its API key from a User Secrets file. Create the file at:
+
+```
+%APPDATA%\Microsoft\UserSecrets\b3a7f1d2-8c4e-4a9b-9f6d-2e5c8b1a0d3f\secrets.json
+```
+
+with this content (replace the key with the one you generated):
+
+```json
+{
+  "Authentication:ApiKey": "<your-api-key>"
+}
+```
+
+Then start chatting:
+
+```powershell
+C:\leontes\cli\leontes.exe chat
+```
+
+### 7. (Optional) Start the Worker
+
+The Worker runs Sentinel (OS event monitoring) and the Signal/Telegram bridges. Windows only.
+
+```powershell
+$env:ConnectionStrings__DefaultConnection = "Host=localhost;Port=5432;Database=leontes;Username=leontes;Password=leontes"
+$env:Authentication__ApiKey = "<your-api-key>"
+C:\leontes\worker\Leontes.Worker.exe
+```
+
+---
+
 ## Development
 
 ### Prerequisites
