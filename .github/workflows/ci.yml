@@ -24,5 +24,19 @@ jobs:
       - name: Build
         run: dotnet build backend/ --no-restore --warnaserror
 
+      - name: Switch Docker to Linux containers
+        shell: pwsh
+        run: |
+          & "$Env:ProgramFiles\Docker\Docker\DockerCli.exe" -SwitchLinuxEngine
+          $deadline = (Get-Date).AddSeconds(30)
+          do {
+            Start-Sleep -Seconds 2
+            $ready = (docker info 2>&1 | Select-String "linux" -Quiet)
+          } until ($ready -or (Get-Date) -gt $deadline)
+          if (-not $ready) { throw "Docker did not switch to Linux mode in time" }
+
+      - name: Pull pgvector image
+        run: docker pull pgvector/pgvector:pg17
+
       - name: Test
         run: dotnet test backend/ --no-build
